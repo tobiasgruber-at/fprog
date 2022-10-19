@@ -1,8 +1,0 @@
-packages: ./
-
-index-state: 2022-09-29T16:58:47Z
-
--- Tests are always enabled
-tests: True
--- Show all the details while running tests
-test-show-details: direct

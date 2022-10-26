@@ -42,11 +42,19 @@ analysiere l lw lw'
     res = differenz l lw lw' :: Differenz
     
 differenz :: Liste -> Loswert -> Loswert -> Differenz
-differenz (Schluss e) lw lw' = if e == lw then 1 else -1  
+differenz (Schluss e) lw lw' = 
+ | e == lw = 1 
+ | e == lw' = -1
+ | otherwise = 0  
 differenz (Kopf e l) lw lw' = differenz (Schluss e) lw lw' + differenz l lw lw'
     
 {- Knapp, aber gut nachvollziehbar geht analysiere folgendermassen vor:
-   ...
+    Die Hilfsfunktion differenz() bestimmt rekursiv die Differenz von der Anzahl an Vorkommnissen beider 
+    gegebenen Loswerte in einer Liste. Der Basisfall (Schluss) gibt 1, 0 oder -1 zurück, je nachdem welchen Loswert der
+    Schluss trägt. Der Kopf summiert rekursiv die Restliste mit dem eigenen Wert (welcher rekursiv als Schluss evaluiert
+    wird).
+    Anhand dieser Differenz evaluert analysiere() ob der erste Loswert öfter oder gleich / weniger oft in einer Liste 
+    vorkommt.
 -}
 
 
@@ -62,11 +70,18 @@ analysiere' b lw lw'
     res = differenz' b lw lw' :: Differenz
 
 differenz' :: Baum -> Loswert -> Loswert -> Differenz
-differenz' (Blatt e) lw lw' = if e == lw then 1 else -1  
+differenz' (Blatt e) lw lw' = 
+ | e == lw = 1 
+ | e == lw' = -1
+ | otherwise = 0  
 differenz' (Gabel b1 e b2) lw lw' = differenz' b1 lw lw' + differenz' (Blatt e) lw lw' + differenz' b2 lw lw'
 
 {- Knapp, aber gut nachvollziehbar geht analysiere' folgendermassen vor:
-   ...
+    Die Hilfsfunktion differenz'() bestimmt rekursiv die Differenz von der Anzahl an Vorkommnissen beider 
+    gegebenen Loswerte in einem Baum. Der Basisfall (Blatt) gibt 1, 0 oder -1 zurück, je nachdem welchen Loswert das
+    Blatt trägt. Die Gabel summiert rekursiv die Teilbäume, sowie den eigenen Wert.
+    Anhand dieser Differenz evaluert analysiere'() ob der erste Loswertöfter oder gleich / weniger oft in dem Baum 
+    vorkommt.
 -}
 
 
@@ -86,7 +101,11 @@ differenz'' (Schluss' t) lw lw' = differenz' t lw lw'
 differenz'' (Kopf' t l) lw lw' = differenz'' (Schluss' t) lw lw' + differenz'' l lw lw'
 
 {- Knapp, aber gut nachvollziehbar geht analysiere'' folgendermassen vor:
-   ...
+    Die Hilfsfunktion differenz''() bestimmt rekursiv die Differenz von der Anzahl an Vorkommnissen beider 
+    gegebenen Loswerte in einer Liste'. Der Basisfall (Schluss') evaluiert mittels differenz'() die Differenz vom Baum. 
+    Der Kopf' summiert rekursiv die Restliste mit dem eigenen Wert, also dem Baum.
+    Anhand dieser Differenz evaluert analysiere''() ob der erste Loswert öfter oder gleich / weniger oft in einer Liste 
+    vorkommt.
 -}
 
 
@@ -106,5 +125,8 @@ differenz''' (Blatt' l) lw lw' = differenz l lw lw'
 differenz''' (Gabel' b1 l b2) lw lw' = differenz''' b1 lw lw' + differenz''' (Blatt' l) lw lw' + differenz''' b2 lw lw'
 
 {- Knapp, aber gut nachvollziehbar geht analysiere''' folgendermassen vor:
-   ...
+    Die Hilfsfunktion differenz'''() bestimmt rekursiv die Differenz von der Anzahl an Vorkommnissen beider 
+    gegebenen Loswerte in einem Baum'. Der Basisfall (Blatt') evaluiert mittels differenz() die Differenz der Liste. 
+    Die Gabel' summiert rekursiv die Teilbäume, sowie den eigenen Wert, also der Liste.
+    Anhand dieser Differenz evaluert analysiere'''() ob der erste Loswert öfter / weniger oft in dem Baum vorkommt.
 -}

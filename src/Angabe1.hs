@@ -73,7 +73,7 @@ korrigiere (x:xs) = x : korrigiere [a | a <- xs, fst a /= fst x]
 
 korrigiere' :: Gewichtsverzeichnis -> Gewichtsverzeichnis
 korrigiere' [] = []
-korrigiere' (x:xs) = (fst x, count) : korrigiere [a | a <- xs, fst a /= fst x]
+korrigiere' (x:xs) = (fst x, count) : korrigiere' [a | a <- xs, fst a /= fst x]
  where 
     matches = [a | a <- x:xs, fst a == fst x]
     count = sum [snd a | a <- matches]

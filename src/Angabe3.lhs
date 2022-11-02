@@ -64,7 +64,10 @@ Aufgabe A.1
 > elemente (E _ z) = 1 + elemente z
 
 Knapp, aber gut nachvollziebar geht matrixtyp folgendermassen vor: 
-...
+matrixtyp() evaluiert fuer eine Matrix den Matrixtyp, indem auf matrixtyp'() weiterdeligiert wird. 
+matrixtyp'() evaluiert fuer eine Matrix den Matrixtyp indem die Anzahl der Zeilen uebergeben wird, und rekursiv fuer jede Zeile
+die Anzahl der Elemente gezaehlt wird. Sollten mehrere Zeilen nicht die selbe Anzahl an Elementen haben, wird error zurueckgegeben.
+zeilen() und elemente() evaluieren rekursiv die Anzahl der Zeilen einer Matrix bzw. Elemente einer Zeile.
 
 
 Aufgabe A.2
@@ -86,8 +89,11 @@ Aufgabe A.2
 > valide' m1 m2 = valide m1 && valide m2
 
 Knapp, aber gut nachvollziehbar geht die Instanzdeklaration fuer Eq folgendermassen vor:
-...
- 
+(==) Operationen auf Matrizen evaluieren fuer zwei Matrizen rekursiv ob jede Zeile uebereinstimmt. Sollte min. eine der Matrizen 
+invalide sein, wird fehler zurueckgegeben.
+(==) Operationen auf Zeilen evaluieren fuer zwei Zeilen rekursiv ob jedes Element uebereinstimmt.
+valide und valide' evaluieren fuer eine bzw. mehrere Matrizen, ob der Matrixtyp valide ist.
+
 
 Aufgabe A.3
 
@@ -124,7 +130,17 @@ Aufgabe A.3
 > gleicherTyp m1 m2 = (valide' m1 m2) && (matrixtyp m1) == (matrixtyp m2)
 
 Knapp, aber gut nachvollziebar geht die Instanzdeklaration fuer Num folgendermassen vor:
-... 
+
+(++) und (--) Operationen auf Matrizen kalkulieren fuer zwei Matrizen deren Summen- bzw. Differenz-Matrix, indem die
+generische Funktion matrixOperation fuer die (++) bzw. (--) Operation ausgewertet wird.
+(abs) Operationen auf Matrizen evaluieren die absolute Matrix, indem die generische Funktion matrixOperation' mit der (abs) 
+Operation ausgewertet wird.
+zeilenOperation und zeilenOperation' fuehren eine zweistellige Operation auf zwei Zeilen aus.
+matrixOperation fuehrt eine zweistellige Operation auf zwei Matrizen aus, jede Zeile rekursiv ausgewertet wird. Sollten
+die Matrizen nicht den gleichen Matrixtyp teilen, so wird fehler zurueckgegeben.
+zeilenOperation' fuehrt eine einstellige Operation auf eine Zeile aus.
+matrixOperation' fuehrt eine einstellige Operation auf eine Matrix aus. Falls der Matrixtyp invalide ist, wird fehler zurueckgegeben.
+gleicherTyp evaluiert, ob zwei Matrizen den gleichen Matrixtyp teilen und dieser fuer beide valide ist.
 
 
 

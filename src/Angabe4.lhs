@@ -58,7 +58,7 @@
 >  show WTS { wt } = "Waeschetrocknetsortiment"
 >  show WSS { ws } = "Waescheschleudersortiment"
 
-> data Lieferantenname = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8 | L9 | L10 deriving (Show, Eq, Enum, Bounded)
+> data Lieferantenname = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8 | L9 | L10 deriving (Show, Eq, Enum, Bounded, Ord)
 
 > type Lieferanten = Lieferantenname -> Sortiment
 
@@ -158,27 +158,29 @@ Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 Aufgabe A.3
 
 > type Preis = EUR
+> type Skontieren = Bool
 > type ProduktDaten = (Stueckzahl, Preis, Skonto)
-> type LieferantDaten = (Lieferantenname, Stueckzahl, Preis, Skonto)
+> type LieferantDaten = (Lieferantenname, Stueckzahl, Preis)
 
 > guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Lieferanten -> Maybe Lieferantenliste
 > guenstigste_Lieferanten s f l 
 >  | length g == 0 = Nothing
->  | True = Just (map (\(n, _, _, _) -> n) g)
->  where 
->   g = guenstigste s f l
+>  | True = Just (map (\(n, _, _) -> n) g)
+>  where g = guenstigste s f l False
 
-> guenstigste :: Suchanfrage -> Lieferfenster -> Lieferanten -> [LieferantDaten]
-> guenstigste s f l = foldl finde_guenstigste [] daten
+> guenstigste :: Suchanfrage -> Lieferfenster -> Lieferanten -> Skontieren -> [LieferantDaten]
+> guenstigste s f l skontieren = foldl finde_guenstigste [] daten
 >  where
 >   finde_guenstigste :: [LieferantDaten] -> LieferantDaten -> [LieferantDaten]
->   finde_guenstigste [] y@(_, y_s, _, _) = if y_s > 0 then [y] else []
->   finde_guenstigste list@(x@(_, _, x_p, _):_) y@(_, y_s, y_p, _)
+>   finde_guenstigste [] y@(_, y_s, _) = if y_s > 0 then [y] else []
+>   finde_guenstigste list@(x@(_, _, x_p):_) y@(_, y_s, y_p)
 >    | y_s == 0 || (y_p > x_p) = list
 >    | (y_p == x_p) = list ++ [y]
 >    | True = [y]
 >   daten :: [LieferantDaten]
->   daten = map (\x -> unshift_tuple x (produktinfo_fenster_st s f (l x))) lieferanten
+>   daten = map (\x -> transform x (produktinfo_fenster_st s f (l x))) lieferanten
+>   transform :: Lieferantenname -> ProduktDaten -> LieferantDaten
+>   transform x (stk, p, skonto) = (x, stk, (if skontieren then skontiert p skonto else p))
 
 > produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> ProduktDaten
 > produktinfo_fenster_st (WM s) f (WMS {wm}) = produktinfo_fenster_ds f (wm s)
@@ -190,9 +192,6 @@ Aufgabe A.3
 > produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p, skonto }) = (lz f, EUR p, skonto)
 > produktinfo_fenster_ds _ _ = (0, EUR 0, Kein_Skonto)
 
-> unshift_tuple :: w -> (x, y, z) -> (w, x, y, z)
-> unshift_tuple a (b, c, d) = (a, b, c, d)
-
 Knapp, aber gut nachvollziebar ,geht die Implementierung folgenderma�en vor:
 ... 
 
@@ -202,9 +201,9 @@ Aufgabe A.4
 > type RabattierterPreis = EUR
 
 > guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Lieferanten -> [(Lieferantenname,RabattierterPreis)]
-> guenstigste_Lieferanten_im_Lieferfenster s f stk l = map (\(n, _, p, skonto) -> (n, skontiert p skonto)) g
+> guenstigste_Lieferanten_im_Lieferfenster s f stk l = map (\(n, _, p) -> (n, p)) g
 >  where 
->   g = filter (\x@(_, x_stk, _, _) -> x_stk >= stk) (guenstigste s f l)
+>   g = filter (\x@(_, x_stk, _) -> x_stk >= stk) (guenstigste s f l True)
 
 > skontiert :: Preis -> Skonto -> Preis
 > skontiert (EUR { euro }) DreiProzent = EUR (ceiling ((fromIntegral euro) * 0.97))

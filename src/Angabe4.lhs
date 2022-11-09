@@ -109,18 +109,20 @@ Aufgabe A.1
 
 > type Lieferantenliste = [Lieferantenname]
 
+> lieferanten = [L1 .. L10]
+
 > sofort_erhaeltlich_bei :: Suchanfrage -> Lieferanten -> Lieferantenliste
-> sofort_erhaeltlich_bei s l = filter (\x -> stk_sofort_st (l x) s > 0) [L1 .. L10]
+> sofort_erhaeltlich_bei s l = filter (\x -> fst (stk_sofort_st s (l x)) > 0) lieferanten
 
-> stk_sofort_st :: Sortiment -> Suchanfrage -> Nat0
-> stk_sofort_st (WMS {wm}) (WM s) = stk_sofort_ds (wm s)
-> stk_sofort_st (WTS {wt}) (WT s) = stk_sofort_ds (wt s)
-> stk_sofort_st (WSS {ws}) (WS s) = stk_sofort_ds (ws s)
-> stk_sofort_st _ s = 0
+> stk_sofort_st :: Suchanfrage -> Sortiment -> (Stueckzahl, Gesamtpreis)
+> stk_sofort_st (WM s) (WMS {wm}) = stk_sofort_ds (wm s)
+> stk_sofort_st (WT s) (WTS {wt}) = stk_sofort_ds (wt s)
+> stk_sofort_st (WS s) (WSS {ws}) = stk_sofort_ds (ws s)
+> stk_sofort_st _ s = (0, 0)
 
-> stk_sofort_ds :: Datensatz -> Nat0
-> stk_sofort_ds DS { sofort_lieferbare_stueckzahl } = sofort_lieferbare_stueckzahl
-> stk_sofort_ds Nicht_im_Sortiment = 0
+> stk_sofort_ds :: Datensatz -> (Stueckzahl, Gesamtpreis)
+> stk_sofort_ds DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p } = ( s, s * p )
+> stk_sofort_ds Nicht_im_Sortiment = (0, 0)
 
 
  Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
@@ -133,7 +135,8 @@ Aufgabe A.2
 > type Gesamtpreis = Nat0
 
 > sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Lieferanten -> (Stueckzahl,Gesamtpreis)
-> sofort_erhaeltliche_Stueckzahl = error "noch nicht implementiert"
+> sofort_erhaeltliche_Stueckzahl s l = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) lm
+>  where lm = (map (\x -> stk_sofort_st s (l x)) lieferanten)
         
 Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ...

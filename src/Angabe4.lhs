@@ -67,19 +67,30 @@
 
 Testdaten
 
+> t_stk_fenster1 :: Lieferfenster -> Nat0
+> t_stk_fenster1 LF { quartal = q, jahr = j } = 1
+
+  | jahr == 2023 = 0
+  | jahr == 2024 = 1
+  | otherwise = 2
+
 > t_stk_fenster2 :: Lieferfenster -> Nat0
-> t_stk_fenster2 LF { quartal = q, jahr = j } = (mod j 4) + 1
+> t_stk_fenster2 LF { quartal = q, jahr = j } = 0
+
+  | jahr == 2023 = 0
+  | jahr == 2024 = 0
+  | otherwise = 0
 
 > t_ds1 :: Datensatz
 > t_ds1 = DS { 
 >    preis_in_euro = 3, 
 >    sofort_lieferbare_stueckzahl = 3, 
->    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster2, 
+>    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster1, 
 >    skonto = Kein_Skonto }
 
 > t_ds2 :: Datensatz
 > t_ds2 = DS { 
->    preis_in_euro = 1, 
+>    preis_in_euro = 2, 
 >    sofort_lieferbare_stueckzahl = 0, 
 >    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster2, 
 >    skonto = Kein_Skonto }
@@ -97,6 +108,7 @@ Testdaten
 
 > t_lieferanten :: Lieferanten
 > t_lieferanten L1 = t_wts1
+> t_lieferanten L2 = t_wts1
 > t_lieferanten _ = t_wms1
 
 Testdaten examples
@@ -122,7 +134,7 @@ Aufgabe A.1
 
 > stk_sofort_ds :: Datensatz -> (Stueckzahl, Gesamtpreis)
 > stk_sofort_ds DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p } = ( s, s * p )
-> stk_sofort_ds Nicht_im_Sortiment = (0, 0)
+> stk_sofort_ds _ = (0, 0)
 
 
  Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
@@ -135,9 +147,10 @@ Aufgabe A.2
 > type Gesamtpreis = Nat0
 
 > sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Lieferanten -> (Stueckzahl,Gesamtpreis)
-> sofort_erhaeltliche_Stueckzahl s l = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) lm
->  where lm = (map (\x -> stk_sofort_st s (l x)) lieferanten)
-        
+> sofort_erhaeltliche_Stueckzahl s l = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) lieferanten_daten
+>  where lieferanten_daten = (map (\x -> stk_sofort_st s (l x)) lieferanten)
+
+
 Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ...
  
@@ -145,8 +158,37 @@ Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 Aufgabe A.3
 
 > type Preis = EUR
+> type Stueckpreis = Nat0
+> type LieferantDaten = (Lieferantenname, Stueckzahl, Stueckpreis)
+
 > guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Lieferanten -> Maybe Lieferantenliste
-> guenstigste_Lieferanten = error "noch nicht implementiert"
+> guenstigste_Lieferanten s f l 
+>  | length guenstigste == 0 = Nothing
+>  | True = Just (map (\(n,_,_) -> n) guenstigste)
+>  where 
+>   guenstigste :: [LieferantDaten]
+>   guenstigste = foldl finde_guenstigste [] daten
+>   finde_guenstigste :: [LieferantDaten] -> LieferantDaten -> [LieferantDaten]
+>   finde_guenstigste [] y@(_, y_s, _) = if y_s > 0 then [y] else []
+>   finde_guenstigste list@(x@(_,_,x_p):_) y@(_, y_s, y_p)
+>    | y_s == 0 || (y_p > x_p) = list
+>    | (y_p == x_p) = list ++ [y]
+>    | True = [y]
+>   daten :: [LieferantDaten]
+>   daten = map (\x -> unshift_tuple x (produktinfo_fenster_st s f (l x))) lieferanten
+
+> produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> (Stueckzahl, Stueckpreis)
+> produktinfo_fenster_st (WM s) f (WMS {wm}) = produktinfo_fenster_ds f (wm s)
+> produktinfo_fenster_st (WT s) f (WTS {wt}) = produktinfo_fenster_ds f (wt s)
+> produktinfo_fenster_st (WS s) f (WSS {ws}) = produktinfo_fenster_ds f (ws s)
+> produktinfo_fenster_st _ _ _ = (0, 0)
+
+> produktinfo_fenster_ds :: Lieferfenster -> Datensatz -> (Stueckzahl, Stueckpreis)
+> produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p }) = (lz f, p)
+> produktinfo_fenster_ds _ _ = (0, 0)
+
+> unshift_tuple :: x -> (y, z) -> (x, y, z)
+> unshift_tuple a (b, c) = (a, b, c)
 
 Knapp, aber gut nachvollziebar ,geht die Implementierung folgenderma�en vor:
 ... 

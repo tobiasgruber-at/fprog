@@ -16,21 +16,21 @@
 > data Skonto  = Kein_Skonto 
 >                | DreiProzent  
 >                | FuenfProzent 
->                | ZehnProzent
+>                | ZehnProzent deriving (Show)
 
-> data Waschmaschinentyp   = WM_Typ1 | WM_Typ2 | WM_Typ3 | WM_Typ4 | WM_Typ5
-> data Waeschetrocknertyp  = WT_Typ1 | WT_Typ2 | WT_Typ3 | WT_Typ4
-> data Waescheschleudertyp = WS_Typ1 | WS_Typ2 | WS_Typ3
+> data Waschmaschinentyp   = WM_Typ1 | WM_Typ2 | WM_Typ3 | WM_Typ4 | WM_Typ5 deriving (Show, Enum, Bounded)
+> data Waeschetrocknertyp  = WT_Typ1 | WT_Typ2 | WT_Typ3 | WT_Typ4 deriving (Show, Enum, Bounded)
+> data Waescheschleudertyp = WS_Typ1 | WS_Typ2 | WS_Typ3 deriving (Show, Enum, Bounded)
 
 > data Typ = WM Waschmaschinentyp
 >            | WT Waeschetrocknertyp
->            | WS Waescheschleudertyp
+>            | WS Waescheschleudertyp deriving (Show)
 
 > data Quartal       = Q1 | Q2 | Q3 | Q4 deriving (Eq,Ord,Show)
 > type Jahr          = Nat2023
 > data Lieferfenster = LF { quartal :: Quartal,
 >                           jahr    :: Jahr 
->                         }
+>                         } deriving (Show)
 
 > data Datensatz 
 >   = DS { preis_in_euro :: Nat1,
@@ -40,27 +40,88 @@
 >        }
 >     | Nicht_im_Sortiment
 
+> instance Show Datensatz where
+>  show DS { 
+>   preis_in_euro = p, 
+>   sofort_lieferbare_stueckzahl = s, 
+>   lieferbare_stueckzahl_im_Zeitfenster = l, 
+>   skonto = sk } = "{ preis: " ++ (show p) ++ ", sofort lieferb. stk: " ++ (show s) ++ ", skonto: " ++ (show sk) ++ "}"
+>  show Nicht_im_Sortiment = "nicht im sortiment"
+
 > data Sortiment 
 >   = WMS {wm   :: Waschmaschinentyp   -> Datensatz}
 >     | WTS {wt :: Waeschetrocknertyp  -> Datensatz}
 >     | WSS {ws :: Waescheschleudertyp -> Datensatz}
 
-> data Lieferantenname = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8 | L9 | L10
+> instance Show Sortiment where
+>  show WMS { wm } = "Waschmaschinensortiment"
+>  show WTS { wt } = "Waeschetrocknetsortiment"
+>  show WSS { ws } = "Waescheschleudersortiment"
+
+> data Lieferantenname = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8 | L9 | L10 deriving (Show, Eq, Enum, Bounded)
 
 > type Lieferanten = Lieferantenname -> Sortiment
 
 > type Suchanfrage = Typ  
 
 
+Testdaten
+
+> t_stk_fenster2 :: Lieferfenster -> Nat0
+> t_stk_fenster2 LF { quartal = q, jahr = j } = (mod j 4) + 1
+
+> t_ds1 :: Datensatz
+> t_ds1 = DS { 
+>    preis_in_euro = 3, 
+>    sofort_lieferbare_stueckzahl = 3, 
+>    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster2, 
+>    skonto = Kein_Skonto }
+
+> t_ds2 :: Datensatz
+> t_ds2 = DS { 
+>    preis_in_euro = 1, 
+>    sofort_lieferbare_stueckzahl = 0, 
+>    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster2, 
+>    skonto = Kein_Skonto }
+
+> t_wts_ds1 :: Waeschetrocknertyp -> Datensatz
+> t_wts_ds1 WT_Typ1 = t_ds1
+> t_wts_ds1 _ = Nicht_im_Sortiment
+
+> t_wms_ds1 :: Waschmaschinentyp -> Datensatz
+> t_wms_ds1 WM_Typ1 = t_ds2
+> t_wms_ds1 _ = Nicht_im_Sortiment
+
+> t_wts1 = WTS { wt = t_wts_ds1 }
+> t_wms1 = WMS { wm = t_wms_ds1 }
+
+> t_lieferanten :: Lieferanten
+> t_lieferanten L1 = t_wts1
+> t_lieferanten _ = t_wms1
+
+Testdaten examples
+
+wm (t_lieferanten L1) WM_Typ1
+lieferbare_stueckzahl_im_Zeitfenster (wm (t_lieferanten L1) WM_Typ1) LF { quartal = Q1, jahr = 2014}
+
+
 Aufgabe A.1
 
 > type Lieferantenliste = [Lieferantenname]
 
-> sofort_erhaeltlich_bei :: Suchanfrage -> Lieferanten  -> Lieferantenliste
-> sofort_erhaeltlich_bei = error "noch nicht implementiert"
+> sofort_erhaeltlich_bei :: Suchanfrage -> Lieferanten -> Lieferantenliste
+> sofort_erhaeltlich_bei s l = filter (\x -> stk_sofort_st (l x) s > 0) [L1 .. L10]
 
-> test1 :: Lieferfenster -> Quartal
-> test1 LF { quartal, jahr } = quartal
+> stk_sofort_st :: Sortiment -> Suchanfrage -> Nat0
+> stk_sofort_st (WMS {wm}) (WM s) = stk_sofort_ds (wm s)
+> stk_sofort_st (WTS {wt}) (WT s) = stk_sofort_ds (wt s)
+> stk_sofort_st (WSS {ws}) (WS s) = stk_sofort_ds (ws s)
+> stk_sofort_st _ s = 0
+
+> stk_sofort_ds :: Datensatz -> Nat0
+> stk_sofort_ds DS { sofort_lieferbare_stueckzahl } = sofort_lieferbare_stueckzahl
+> stk_sofort_ds Nicht_im_Sortiment = 0
+
 
  Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ...

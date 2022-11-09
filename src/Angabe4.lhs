@@ -192,6 +192,12 @@ Aufgabe A.3
 > produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p, skonto }) = (lz f, EUR p, skonto)
 > produktinfo_fenster_ds _ _ = (0, EUR 0, Kein_Skonto)
 
+> skontiert :: Preis -> Skonto -> Preis
+> skontiert (EUR { euro }) DreiProzent = EUR (ceiling ((fromIntegral euro) * 0.97))
+> skontiert (EUR { euro }) FuenfProzent = EUR (ceiling ((fromIntegral euro) * 0.95))
+> skontiert (EUR { euro }) ZehnProzent = EUR (ceiling ((fromIntegral euro) * 0.9))
+> skontiert p _ = p
+
 Knapp, aber gut nachvollziebar ,geht die Implementierung folgenderma�en vor:
 ... 
 
@@ -202,14 +208,7 @@ Aufgabe A.4
 
 > guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Lieferanten -> [(Lieferantenname,RabattierterPreis)]
 > guenstigste_Lieferanten_im_Lieferfenster s f stk l = map (\(n, _, p) -> (n, p)) g
->  where 
->   g = filter (\x@(_, x_stk, _) -> x_stk >= stk) (guenstigste s f l True)
-
-> skontiert :: Preis -> Skonto -> Preis
-> skontiert (EUR { euro }) DreiProzent = EUR (ceiling ((fromIntegral euro) * 0.97))
-> skontiert (EUR { euro }) FuenfProzent = EUR (ceiling ((fromIntegral euro) * 0.95))
-> skontiert (EUR { euro }) ZehnProzent = EUR (ceiling ((fromIntegral euro) * 0.9))
-> skontiert p _ = p
+>  where g = filter (\x@(_, x_stk, _) -> x_stk >= stk) (guenstigste s f l True)
 
 Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ... 

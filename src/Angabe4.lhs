@@ -11,7 +11,7 @@
 > type Nat1    = Int     -- Natuerliche Zahlen beginnend mit 1
 > type Nat2023 = Int     -- Natuerliche Zahlen beginnend mit 2023
 
-> newtype EUR  = EUR { euro :: Nat1 } deriving (Eq, Ord)
+> newtype EUR  = EUR { euro :: Nat1 } deriving (Eq, Ord, Show, Num)
 
 > data Skonto  = Kein_Skonto 
 >                | DreiProzent  
@@ -68,14 +68,14 @@
 Testdaten
 
 > t_stk_fenster1 :: Lieferfenster -> Nat0
-> t_stk_fenster1 LF { quartal = q, jahr = j } = 1
+> t_stk_fenster1 LF { quartal = q, jahr = j } = 100
 
   | jahr == 2023 = 0
   | jahr == 2024 = 1
   | otherwise = 2
 
 > t_stk_fenster2 :: Lieferfenster -> Nat0
-> t_stk_fenster2 LF { quartal = q, jahr = j } = 0
+> t_stk_fenster2 LF { quartal = q, jahr = j } = 100
 
   | jahr == 2023 = 0
   | jahr == 2024 = 0
@@ -83,10 +83,10 @@ Testdaten
 
 > t_ds1 :: Datensatz
 > t_ds1 = DS { 
->    preis_in_euro = 3, 
+>    preis_in_euro = 100, 
 >    sofort_lieferbare_stueckzahl = 3, 
 >    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster1, 
->    skonto = Kein_Skonto }
+>    skonto = DreiProzent }
 
 > t_ds2 :: Datensatz
 > t_ds2 = DS { 
@@ -108,8 +108,8 @@ Testdaten
 
 > t_lieferanten :: Lieferanten
 > t_lieferanten L1 = t_wts1
-> t_lieferanten L2 = t_wts1
-> t_lieferanten _ = t_wms1
+> t_lieferanten L2 = t_wms1
+> t_lieferanten _ = t_wts1
 
 Testdaten examples
 
@@ -158,36 +158,40 @@ Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 Aufgabe A.3
 
 > type Preis = EUR
-> type LieferantDaten = (Lieferantenname, Stueckzahl, Preis)
+> type ProduktDaten = (Stueckzahl, Preis, Skonto)
+> type LieferantDaten = (Lieferantenname, Stueckzahl, Preis, Skonto)
 
 > guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Lieferanten -> Maybe Lieferantenliste
 > guenstigste_Lieferanten s f l 
->  | length guenstigste == 0 = Nothing
->  | True = Just (map (\(n,_,_) -> n) guenstigste)
+>  | length g == 0 = Nothing
+>  | True = Just (map (\(n, _, _, _) -> n) g)
 >  where 
->   guenstigste :: [LieferantDaten]
->   guenstigste = foldl finde_guenstigste [] daten
+>   g = guenstigste s f l
+
+> guenstigste :: Suchanfrage -> Lieferfenster -> Lieferanten -> [LieferantDaten]
+> guenstigste s f l = foldl finde_guenstigste [] daten
+>  where
 >   finde_guenstigste :: [LieferantDaten] -> LieferantDaten -> [LieferantDaten]
->   finde_guenstigste [] y@(_, y_s, _) = if y_s > 0 then [y] else []
->   finde_guenstigste list@(x@(_,_,x_p):_) y@(_, y_s, y_p)
+>   finde_guenstigste [] y@(_, y_s, _, _) = if y_s > 0 then [y] else []
+>   finde_guenstigste list@(x@(_, _, x_p, _):_) y@(_, y_s, y_p, _)
 >    | y_s == 0 || (y_p > x_p) = list
 >    | (y_p == x_p) = list ++ [y]
 >    | True = [y]
 >   daten :: [LieferantDaten]
 >   daten = map (\x -> unshift_tuple x (produktinfo_fenster_st s f (l x))) lieferanten
 
-> produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> (Stueckzahl, Preis)
+> produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> ProduktDaten
 > produktinfo_fenster_st (WM s) f (WMS {wm}) = produktinfo_fenster_ds f (wm s)
 > produktinfo_fenster_st (WT s) f (WTS {wt}) = produktinfo_fenster_ds f (wt s)
 > produktinfo_fenster_st (WS s) f (WSS {ws}) = produktinfo_fenster_ds f (ws s)
-> produktinfo_fenster_st _ _ _ = (0, EUR 0)
+> produktinfo_fenster_st _ _ _ = (0, EUR 0, Kein_Skonto)
 
-> produktinfo_fenster_ds :: Lieferfenster -> Datensatz -> (Stueckzahl, Preis)
-> produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p }) = (lz f, EUR p)
-> produktinfo_fenster_ds _ _ = (0, EUR 0)
+> produktinfo_fenster_ds :: Lieferfenster -> Datensatz -> ProduktDaten
+> produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p, skonto }) = (lz f, EUR p, skonto)
+> produktinfo_fenster_ds _ _ = (0, EUR 0, Kein_Skonto)
 
-> unshift_tuple :: x -> (y, z) -> (x, y, z)
-> unshift_tuple a (b, c) = (a, b, c)
+> unshift_tuple :: w -> (x, y, z) -> (w, x, y, z)
+> unshift_tuple a (b, c, d) = (a, b, c, d)
 
 Knapp, aber gut nachvollziebar ,geht die Implementierung folgenderma�en vor:
 ... 
@@ -197,9 +201,16 @@ Aufgabe A.4
 
 > type RabattierterPreis = EUR
 
-> guenstigste_Lieferanten_im_Lieferfenster ::  Suchanfrage -> Lieferfenster -> Stueckzahl -> Lieferanten -> [(Lieferantenname,RabattierterPreis)]
-> guenstigste_Lieferanten_im_Lieferfenster = error "noch nicht implementiert"
+> guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Lieferanten -> [(Lieferantenname,RabattierterPreis)]
+> guenstigste_Lieferanten_im_Lieferfenster s f stk l = map (\(n, _, p, skonto) -> (n, skontiert p skonto)) g
+>  where 
+>   g = filter (\x@(_, x_stk, _, _) -> x_stk >= stk) (guenstigste s f l)
 
+> skontiert :: Preis -> Skonto -> Preis
+> skontiert (EUR { euro }) DreiProzent = EUR (ceiling ((fromIntegral euro) * 0.97))
+> skontiert (EUR { euro }) FuenfProzent = EUR (ceiling ((fromIntegral euro) * 0.95))
+> skontiert (EUR { euro }) ZehnProzent = EUR (ceiling ((fromIntegral euro) * 0.9))
+> skontiert p _ = p
 
 Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ... 

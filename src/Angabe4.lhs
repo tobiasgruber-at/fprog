@@ -11,7 +11,7 @@
 > type Nat1    = Int     -- Natuerliche Zahlen beginnend mit 1
 > type Nat2023 = Int     -- Natuerliche Zahlen beginnend mit 2023
 
-> newtype EUR  = EUR { euro :: Nat1 }
+> newtype EUR  = EUR { euro :: Nat1 } deriving (Eq, Ord)
 
 > data Skonto  = Kein_Skonto 
 >                | DreiProzent  
@@ -158,8 +158,7 @@ Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 Aufgabe A.3
 
 > type Preis = EUR
-> type Stueckpreis = Nat0
-> type LieferantDaten = (Lieferantenname, Stueckzahl, Stueckpreis)
+> type LieferantDaten = (Lieferantenname, Stueckzahl, Preis)
 
 > guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Lieferanten -> Maybe Lieferantenliste
 > guenstigste_Lieferanten s f l 
@@ -177,15 +176,15 @@ Aufgabe A.3
 >   daten :: [LieferantDaten]
 >   daten = map (\x -> unshift_tuple x (produktinfo_fenster_st s f (l x))) lieferanten
 
-> produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> (Stueckzahl, Stueckpreis)
+> produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> (Stueckzahl, Preis)
 > produktinfo_fenster_st (WM s) f (WMS {wm}) = produktinfo_fenster_ds f (wm s)
 > produktinfo_fenster_st (WT s) f (WTS {wt}) = produktinfo_fenster_ds f (wt s)
 > produktinfo_fenster_st (WS s) f (WSS {ws}) = produktinfo_fenster_ds f (ws s)
-> produktinfo_fenster_st _ _ _ = (0, 0)
+> produktinfo_fenster_st _ _ _ = (0, EUR 0)
 
-> produktinfo_fenster_ds :: Lieferfenster -> Datensatz -> (Stueckzahl, Stueckpreis)
-> produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p }) = (lz f, p)
-> produktinfo_fenster_ds _ _ = (0, 0)
+> produktinfo_fenster_ds :: Lieferfenster -> Datensatz -> (Stueckzahl, Preis)
+> produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p }) = (lz f, EUR p)
+> produktinfo_fenster_ds _ _ = (0, EUR 0)
 
 > unshift_tuple :: x -> (y, z) -> (x, y, z)
 > unshift_tuple a (b, c) = (a, b, c)

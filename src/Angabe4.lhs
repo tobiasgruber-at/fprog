@@ -113,10 +113,10 @@ Aufgabe A.3
 > guenstigste_Lieferanten s f l 
 >  | length g == 0 = Nothing
 >  | True = Just (map (\(n, _, _) -> n) g)
->  where g = guenstigste s f l False
+>  where g = guenstigste s f l False 0
 
-> guenstigste :: Suchanfrage -> Lieferfenster -> Lieferanten -> Skontieren -> [LieferantDaten]
-> guenstigste s f l skontieren = foldl finde_guenstigste [] daten
+> guenstigste :: Suchanfrage -> Lieferfenster -> Lieferanten -> Skontieren -> Stueckzahl -> [LieferantDaten]
+> guenstigste s f l skontieren min_stk = foldl finde_guenstigste [] daten
 >  where
 >   finde_guenstigste :: [LieferantDaten] -> LieferantDaten -> [LieferantDaten]
 >   finde_guenstigste [] y@(_, y_s, _) = if y_s > 0 then [y] else []
@@ -125,9 +125,9 @@ Aufgabe A.3
 >    | (y_p == x_p) = list ++ [y]
 >    | True = [y]
 >   daten :: [LieferantDaten]
->   daten = map (\x -> transform x (produktinfo_fenster_st s f (l x))) lieferanten
+>   daten = filter (\x@(_, x_stk, _) -> x_stk >= min_stk) (map (\x -> transform x (produktinfo_fenster_st s f (l x))) lieferanten)
 >   transform :: Lieferantenname -> ProduktDaten -> LieferantDaten
->   transform x (stk, p, skonto) = (x, stk, (if skontieren then skontiert p skonto else p))
+>   transform x (stk, p, skonto) = (x, stk, (if skontieren then skontiert (EUR ((fromIntegral (euro p)) * min_stk)) skonto else p))
 
 > produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> ProduktDaten
 > produktinfo_fenster_st (WM s) f (WMS wm) = produktinfo_fenster_ds f (wm s)
@@ -154,8 +154,9 @@ Aufgabe A.4
 > type RabattierterPreis = EUR
 
 > guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Lieferanten -> [(Lieferantenname,RabattierterPreis)]
+> guenstigste_Lieferanten_im_Lieferfenster _ _ 0 _ = []
 > guenstigste_Lieferanten_im_Lieferfenster s f stk l = map (\(n, _, p) -> (n, p)) g
->  where g = filter (\x@(_, x_stk, _) -> x_stk >= stk) (guenstigste s f l True)
+>  where g = guenstigste s f l True stk
 
 Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ... 

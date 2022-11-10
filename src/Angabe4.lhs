@@ -11,7 +11,7 @@
 > type Nat1    = Int     -- Natuerliche Zahlen beginnend mit 1
 > type Nat2023 = Int     -- Natuerliche Zahlen beginnend mit 2023
 
-> newtype EUR  = EUR { euro :: Nat1 } deriving (Eq, Ord, Show, Num)
+> newtype EUR  = EUR { euro :: Nat1 } deriving (Eq, Ord, Show)
 
 > data Skonto  = Kein_Skonto 
 >                | DreiProzent  
@@ -54,9 +54,9 @@
 >     | WSS {ws :: Waescheschleudertyp -> Datensatz}
 
 > instance Show Sortiment where
->  show WMS { wm } = "Waschmaschinensortiment"
->  show WTS { wt } = "Waeschetrocknetsortiment"
->  show WSS { ws } = "Waescheschleudersortiment"
+>  show (WMS wm) = "Waschmaschinensortiment"
+>  show (WTS wt) = "Waeschetrocknetsortiment"
+>  show (WSS ws) = "Waescheschleudersortiment"
 
 > data Lieferantenname = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8 | L9 | L10 deriving (Show, Eq, Enum, Bounded, Ord)
 
@@ -65,77 +65,25 @@
 > type Suchanfrage = Typ  
 
 
-Testdaten
-
-> t_stk_fenster1 :: Lieferfenster -> Nat0
-> t_stk_fenster1 LF { quartal = q, jahr = j } = 100
-
-  | jahr == 2023 = 0
-  | jahr == 2024 = 1
-  | otherwise = 2
-
-> t_stk_fenster2 :: Lieferfenster -> Nat0
-> t_stk_fenster2 LF { quartal = q, jahr = j } = 100
-
-  | jahr == 2023 = 0
-  | jahr == 2024 = 0
-  | otherwise = 0
-
-> t_ds1 :: Datensatz
-> t_ds1 = DS { 
->    preis_in_euro = 100, 
->    sofort_lieferbare_stueckzahl = 3, 
->    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster1, 
->    skonto = DreiProzent }
-
-> t_ds2 :: Datensatz
-> t_ds2 = DS { 
->    preis_in_euro = 2, 
->    sofort_lieferbare_stueckzahl = 0, 
->    lieferbare_stueckzahl_im_Zeitfenster = t_stk_fenster2, 
->    skonto = Kein_Skonto }
-
-> t_wts_ds1 :: Waeschetrocknertyp -> Datensatz
-> t_wts_ds1 WT_Typ1 = t_ds1
-> t_wts_ds1 _ = Nicht_im_Sortiment
-
-> t_wms_ds1 :: Waschmaschinentyp -> Datensatz
-> t_wms_ds1 WM_Typ1 = t_ds2
-> t_wms_ds1 _ = Nicht_im_Sortiment
-
-> t_wts1 = WTS { wt = t_wts_ds1 }
-> t_wms1 = WMS { wm = t_wms_ds1 }
-
-> t_lieferanten :: Lieferanten
-> t_lieferanten L1 = t_wts1
-> t_lieferanten L2 = t_wms1
-> t_lieferanten _ = t_wts1
-
-Testdaten examples
-
-wm (t_lieferanten L1) WM_Typ1
-lieferbare_stueckzahl_im_Zeitfenster (wm (t_lieferanten L1) WM_Typ1) LF { quartal = Q1, jahr = 2014}
-
-
 Aufgabe A.1
 
 > type Lieferantenliste = [Lieferantenname]
 
-> lieferanten = [L1 .. L10]
-
 > sofort_erhaeltlich_bei :: Suchanfrage -> Lieferanten -> Lieferantenliste
 > sofort_erhaeltlich_bei s l = filter (\x -> fst (stk_sofort_st s (l x)) > 0) lieferanten
 
+> lieferanten :: Lieferantenliste
+> lieferanten = [L1 .. L10]
+
 > stk_sofort_st :: Suchanfrage -> Sortiment -> (Stueckzahl, Gesamtpreis)
-> stk_sofort_st (WM s) (WMS {wm}) = stk_sofort_ds (wm s)
-> stk_sofort_st (WT s) (WTS {wt}) = stk_sofort_ds (wt s)
-> stk_sofort_st (WS s) (WSS {ws}) = stk_sofort_ds (ws s)
+> stk_sofort_st (WM s) (WMS wm) = stk_sofort_ds (wm s)
+> stk_sofort_st (WT s) (WTS wt) = stk_sofort_ds (wt s)
+> stk_sofort_st (WS s) (WSS ws) = stk_sofort_ds (ws s)
 > stk_sofort_st _ s = (0, 0)
 
 > stk_sofort_ds :: Datensatz -> (Stueckzahl, Gesamtpreis)
 > stk_sofort_ds DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p } = ( s, s * p )
 > stk_sofort_ds _ = (0, 0)
-
 
  Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ...
@@ -149,7 +97,6 @@ Aufgabe A.2
 > sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Lieferanten -> (Stueckzahl,Gesamtpreis)
 > sofort_erhaeltliche_Stueckzahl s l = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) lieferanten_daten
 >  where lieferanten_daten = (map (\x -> stk_sofort_st s (l x)) lieferanten)
-
 
 Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
 ...
@@ -183,19 +130,19 @@ Aufgabe A.3
 >   transform x (stk, p, skonto) = (x, stk, (if skontieren then skontiert p skonto else p))
 
 > produktinfo_fenster_st :: Suchanfrage -> Lieferfenster -> Sortiment -> ProduktDaten
-> produktinfo_fenster_st (WM s) f (WMS {wm}) = produktinfo_fenster_ds f (wm s)
-> produktinfo_fenster_st (WT s) f (WTS {wt}) = produktinfo_fenster_ds f (wt s)
-> produktinfo_fenster_st (WS s) f (WSS {ws}) = produktinfo_fenster_ds f (ws s)
+> produktinfo_fenster_st (WM s) f (WMS wm) = produktinfo_fenster_ds f (wm s)
+> produktinfo_fenster_st (WT s) f (WTS wt) = produktinfo_fenster_ds f (wt s)
+> produktinfo_fenster_st (WS s) f (WSS ws) = produktinfo_fenster_ds f (ws s)
 > produktinfo_fenster_st _ _ _ = (0, EUR 0, Kein_Skonto)
 
 > produktinfo_fenster_ds :: Lieferfenster -> Datensatz -> ProduktDaten
-> produktinfo_fenster_ds f (DS { lieferbare_stueckzahl_im_Zeitfenster = lz, preis_in_euro = p, skonto }) = (lz f, EUR p, skonto)
+> produktinfo_fenster_ds f (DS p _ lz skonto) = (lz f, EUR p, skonto)
 > produktinfo_fenster_ds _ _ = (0, EUR 0, Kein_Skonto)
 
 > skontiert :: Preis -> Skonto -> Preis
-> skontiert (EUR { euro }) DreiProzent = EUR (ceiling ((fromIntegral euro) * 0.97))
-> skontiert (EUR { euro }) FuenfProzent = EUR (ceiling ((fromIntegral euro) * 0.95))
-> skontiert (EUR { euro }) ZehnProzent = EUR (ceiling ((fromIntegral euro) * 0.9))
+> skontiert (EUR euro) DreiProzent = EUR (ceiling ((fromIntegral euro) * 0.97))
+> skontiert (EUR euro) FuenfProzent = EUR (ceiling ((fromIntegral euro) * 0.95))
+> skontiert (EUR euro) ZehnProzent = EUR (ceiling ((fromIntegral euro) * 0.9))
 > skontiert p _ = p
 
 Knapp, aber gut nachvollziebar ,geht die Implementierung folgenderma�en vor:

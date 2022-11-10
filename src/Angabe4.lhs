@@ -1,7 +1,7 @@
 > module Angabe4 where
 
 1. Vervollstaendigen Sie gemaess Angabentext!
-2. Vervollstaendigen Sie auch die vorgegebenen Kommentaranf�nge!
+2. Vervollstaendigen Sie auch die vorgegebenen Kommentaranfaenge!
 3. Loeschen Sie keine Deklarationen aus diesem Rahmenprogramm, auch nicht die Modulanweisung!
 4. Achten Sie darauf, dass `Gruppe' Leserechte fuer Ihre Abgabedatei hat!
 5. Hinweis: Kommentar- und Programmzeilen muessen durch mindestens eine Leerzeile getrennt sein!
@@ -85,8 +85,11 @@ Aufgabe A.1
 > stk_sofort_ds DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p } = ( s, s * p )
 > stk_sofort_ds _ = (0, 0)
 
- Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
-...
+Knapp, aber gut nachvollziebar, geht die Implementierung folgendermassen vor:
+
+sofort_erhaeltlich_bei filtert alle Lieferanten aus, die das angefragte Produkt nicht sofort liefern koennen.
+stk_sofort_st liefert fuer Suchanfrage und Sortiment die noetigen Daten. Ist das Produkt nicht in dem Sortiment enthalten, wird eine Stueckzahl von 0 zurueckgegeben.
+stk_sofort_ds die sofort verfuegbaren Stueck eines Datensatzes.
 
 
 Aufgabe A.2
@@ -98,9 +101,10 @@ Aufgabe A.2
 > sofort_erhaeltliche_Stueckzahl s l = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) lieferanten_daten
 >  where lieferanten_daten = (map (\x -> stk_sofort_st s (l x)) lieferanten)
 
-Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
-...
- 
+Knapp, aber gut nachvollziebar, geht die Implementierung folgendermassen vor:
+
+sofort_erhaeltliche_Stueckzahl erstellt eine Liste, welche fuer jeden Lieferanten einen Eintrag ueber dessen Lieferstand beinhaltet.
+Die Summe dieser Eintraege wird zurueckgegeben.
 
 Aufgabe A.3
 
@@ -145,8 +149,16 @@ Aufgabe A.3
 > skontiert (EUR euro) ZehnProzent = EUR (ceiling ((fromIntegral euro) * 0.9))
 > skontiert p _ = p
 
-Knapp, aber gut nachvollziebar ,geht die Implementierung folgenderma�en vor:
-... 
+Knapp, aber gut nachvollziebar ,geht die Implementierung folgendermassen vor:
+
+guenstigste_Lieferanten konvertiert eine Liste an guenstigsten Lieferanten in ein Maybe Typ dieser Liste.
+guenstigste erstellt eine Liste 'daten', welche fuer jeden Lieferanten, der die Mindeststueck liefern kann, einen Eintrag derer Lieferdaten beinhaltet.
+Hier wird optional nach dem Stueckpreis, sondern dem skontierten Preis aller benoetigten Stueck gearbeitet.
+Anhand dieser wird iterativ die Menge der guenstigsten Lieferanten bestimmt.
+produktinfo_fenster_st liefert fuer den aus Sortiment und Anfrage resultierenden Datensatz die noetigen Lieferdaten.
+produktinfo_fenster_st liefert fuer ein Lieferfenster und einen Datensatz die noetigen Lieferdaten.
+skontiert evaluiert abhaengig vom Skonto den skonierten Betrag.
+
 
 
 Aufgabe A.4
@@ -158,5 +170,7 @@ Aufgabe A.4
 > guenstigste_Lieferanten_im_Lieferfenster s f stk l = map (\(n, _, p) -> (n, p)) g
 >  where g = guenstigste s f l True stk
 
-Knapp, aber gut nachvollziebar, geht die Implementierung folgenderma�en vor:
-... 
+Knapp, aber gut nachvollziebar, geht die Implementierung folgendermassen vor:
+
+guenstigste_Lieferanten_im_Lieferfenster evaluiert fuer eine Liste von guenstigsten Lieferanten (unter Miteinbeziehung von Skonti) eines Zeitraums 
+eine Vergleichliste von Preisen.

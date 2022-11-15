@@ -1,37 +1,131 @@
 module TestSuite5 where
 
-import Test.Tasty
-import Test.Tasty.QuickCheck as QC
-import Test.Tasty.HUnit
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import qualified Control.Exception as Exc
 
-import Data.List
-import Data.Ord
+import           Angabe5
+
+expectSomeError :: a -> Assertion
+expectSomeError val = do
+  res <- Exc.try (Exc.evaluate val)
+  case res of
+    Left (Exc.ErrorCall _) -> pure ()
+    Right _ -> assertFailure "Expected error call but got none"
 
 spec :: TestTree
-spec = testGroup "Angabe5"  [ properties, unitTests]
+spec = testGroup "Angabe5" [lieferausblickTests, sortimentTests, anbieterTests, sofortLieferfaehigTests, sofortErhaeltlichTests]
 
-properties :: TestTree
-properties = testGroup "Properties" [qcProps]
+lieferausblickTests :: TestTree
+lieferausblickTests =
+  testGroup
+    "Lieferausblick Tests"
+    [ testCase "Lieferausblick ist wohlgeformt 1" $
+      ist_wgf
+        (LA
+           [ ((LF Q1 2023), 2)
+           , ((LF Q2 2023), 2)
+           , ((LF Q1 2023), 2)
+           , ((LF Q3 2025), 5)
+           ]) @?=
+      True
+    , testCase "Lieferausblick ist wohlgeformt 2" $
+      ist_wgf (LA [((LF Q1 2023), 0)]) @?= True
+    , testCase "Lieferausblick ist wohlgeformt 3" $
+      ist_wgf (LA [((LF Q1 2023), 1), ((LF Q1 2023), 0)]) @?= False
+    , testCase "Lieferausblick ist nicht wohlgeformt 1" $
+      ist_nwgf (LA [((LF Q1 2023), 0)]) @?= False
+    , testCase "Lieferausblick wohlgeformt Fehler 1" $
+      expectSomeError (wgf_fehler (LA [((LF Q1 2023), 0)]))
+    ]
 
+sortimentTests :: TestTree
+sortimentTests =
+  testGroup
+    "Sortiment Tests"
+    [ testCase "Sortiment ist wohlgeformt 1" $
+      ist_wgf (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]) @?=
+      True
+    , testCase "Sortiment ist wohlgeformt 2" $
+      ist_wgf
+        (Sort
+           [ ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))
+           , ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))
+           ]) @?=
+      False
+    , testCase "Sortiment ist nicht wohlgeformt 1" $
+      ist_nwgf (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]) @?=
+      False
+    , testCase "Sortiment wohlgeformt Fehler 1" $
+      expectSomeError(wgf_fehler (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+    ]
 
-unitTests :: TestTree
-unitTests = testGroup "Unit tests"
-  [ testCase "List comparison (different length)" $
-      [1, 2, 3] `compare` [1,2] @?= GT
-
-  -- the following test does not hold
-  , testCase "List comparison (same length)" $
-      [1, 2, 3] `compare` [1,2,2] @?= LT
-  ]
-
-qcProps :: TestTree
-qcProps = testGroup "(checked by QuickCheck)"
-  [ QC.testProperty "sort == sort . reverse" $
-      \list -> sort (list :: [Int]) == sort (reverse list)
-  , QC.testProperty "Fermat's little theorem" $
-      \x -> ((x :: Integer)^7 - x) `mod` 7 == 0
-  -- the following property does not hold
-  , QC.testProperty "Fermat's last theorem" $
-      \x y z n ->
-        (n :: Integer) >= 3 QC.==> x^n + y^n /= (z^n :: Integer)
-  ]
+anbieterTests :: TestTree
+anbieterTests =
+  testGroup
+    "Anbieter Tests"
+    [ testCase "Anbieter ist wohlgeformt 1" $
+      ist_wgf (A [(H1, (Sort []))]) @?= True
+    , testCase "Anbieter ist wohlgeformt 2" $
+      ist_wgf (A [(H1, (Sort [])), (H1, (Sort []))]) @?= False
+    , testCase "Anbieter ist wohlgeformt 3" $
+      ist_wgf
+        (A [ (H1, (Sort []))
+           , ( H2
+             , (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+           ]) @?=
+      True
+    , testCase "Anbieter ist wohlgeformt 4" $
+      ist_wgf
+        (A [ ( H1
+             , (Sort
+                  [ ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))
+                  , ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))
+                  ]))
+           ]) @?=
+      False
+    , testCase "Anbieter ist nicht wohlgeformt 1" $
+      ist_nwgf (A [(H1, (Sort []))]) @?= False
+    , testCase "Anbieter wohlgeformt Fehler 1" $
+      expectSomeError(wgf_fehler (A [(H1, (Sort []))]))
+    ]
+    
+sofortLieferfaehigTests :: TestTree
+sofortLieferfaehigTests = 
+  testGroup
+    "SofortLieferfähig Tests"
+    [ testCase "Sofort lieferbar 1" $
+      sofort_lieferfaehig (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))])
+      @?= [H1]
+    , testCase "Sofort lieferbar 2" $
+      sofort_lieferfaehig (S S3) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((T T2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))])
+      @?= []
+    , testCase "Sofort lieferbar 2" $
+      sofort_lieferfaehig (T T2) (A [
+        (H1, (Sort [((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((T T2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))])),
+        (H2, (Sort [((T T2), (DS 2 3 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((S S2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+      ])
+      @?= [H1, H2]
+    , testCase "Sofort lieferbar fehlerhaft 1" $
+      expectSomeError(sofort_lieferfaehig (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))]))
+    ]
+    
+sofortErhaeltlichTests :: TestTree
+sofortErhaeltlichTests = 
+  testGroup
+    "sofortErhaeltlichTests Tests"
+    [ testCase "Sofort erhältlich 1" $
+      sofort_erhaeltliche_Stueckzahl (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))])
+      @?= (1, 1)
+    , testCase "Sofort erhältlich 2" $
+      sofort_erhaeltliche_Stueckzahl (M M3) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))])
+      @?= (0, 0)
+    , testCase "Sofort erhältlich 3" $
+      sofort_erhaeltliche_Stueckzahl (T T2) (A [
+        (H1, (Sort [((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((T T2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))])),
+        (H2, (Sort [((T T2), (DS 2 3 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((S S2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+      ])
+      @?= (4, 7)
+    , testCase "Sofort erhältlich fehlerhaft 1" $
+      expectSomeError(sofort_erhaeltliche_Stueckzahl (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))]))
+    ]

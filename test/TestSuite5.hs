@@ -108,10 +108,12 @@ sofortLieferfaehigTests =
       @?= []
     , testCase "Sofort lieferbar 2" $
       sofort_lieferfaehig (T T2) (A [
-        (H1, (Sort [((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((T T2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))])),
-        (H2, (Sort [((T T2), (DS 2 3 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((S S2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+        (H3, (Sort [((T T2), (DS 3 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M4), (DS 3 1 (LA [((LF Q2 2023), 0)]) Kein_Skonto))])),
+        (H1, (Sort [((M M2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((T T2), (DS 2 0 (LA [((LF Q1 2023), 0)]) Kein_Skonto))])),
+        (H2, (Sort [((S S1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((T T2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))])),
+        (H4, (Sort [((T T2), (DS 2 3 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((S S2), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
       ])
-      @?= [H1, H2]
+      @?= [H4, H3, H2]
     , testCase "Sofort lieferbar fehlerhaft 1" $
       expectSomeError "Anbieterfehler" $ sofort_lieferfaehig (M M1) (A [(H1, (Sort [
         ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), 
@@ -168,13 +170,23 @@ guenstigsteLieferantenTests =
       (H1, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 3)]) Kein_Skonto))])), 
       (H2, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 2)]) Kein_Skonto))]))
     ])
-    @?= Just [H1, H2]
+    @?= Just [H2, H1]
   , testCase "Günstigste Lieferanten 3" $
     guenstigste_Lieferanten (M M1) (LF Q1 2023) (A [
       (H1, (Sort [(M M1, (DS 2 0 (LA [((LF Q1 2023), 3)]) Kein_Skonto))])), 
       (H2, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 2)]) Kein_Skonto))]))
     ])
     @?= Just [H2]
+  , testCase "Günstigste Lieferanten 3" $
+    guenstigste_Lieferanten (M M1) (LF Q1 2023) (A [
+      (H5, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 3)]) Kein_Skonto))])), 
+      (H2, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 2)]) Kein_Skonto))])),
+      (H3, (Sort [(M M1, (DS 2 0 (LA [((LF Q1 2023), 5)]) Kein_Skonto))])),
+      (H7, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 3)]) Kein_Skonto))])),
+      (H9, (Sort [(M M1, (DS 1 0 (LA [((LF Q2 2023), 1)]) Kein_Skonto))])),
+      (H4, (Sort [(M M1, (DS 1 0 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+    ])
+    @?= Just [H7, H5, H2]
   , testCase "Keine Lieferanten 1" $
     guenstigste_Lieferanten (M M1) (LF Q1 2023) (A [])
     @?= Nothing  

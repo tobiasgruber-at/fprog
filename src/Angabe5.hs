@@ -44,7 +44,7 @@ data Datensatz
 
 newtype Sortiment = Sort [(Typ,Datensatz)] deriving (Eq, Show)
 
-data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10 deriving (Eq, Show)
+data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10 deriving (Eq, Show, Ord)
 
 newtype Anbieter = A [(Haendler,Sortiment)] deriving (Show)
 
@@ -89,7 +89,7 @@ type Haendlerliste = [Haendler]
 type Stueckpreis = Nat0
 
 sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
-sofort_lieferfaehig sa a = [x_h | (x_h,x_s) <- anbieter_liste(validiere a), (fst $ sofort_lieferbar_st sa x_s) > 0]
+sofort_lieferfaehig sa a = quickSortRev [x_h | (x_h,x_s) <- anbieter_liste(validiere a), (fst $ sofort_lieferbar_st sa x_s) > 0]
 
 sofort_lieferbar_st :: Suchanfrage -> Sortiment -> (Stueckzahl, Stueckpreis)
 sofort_lieferbar_st sa (Sort s_l) = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) [sofort_lieferbar_ds x_ds | (x_t,x_ds) <- s_l, x_t == sa]
@@ -105,6 +105,13 @@ validiere :: (Wgf a) => a -> a
 validiere a
  | ist_wgf a == True = a
  | otherwise = wgf_fehler a 
+
+quickSortRev :: (Ord a) => [a] -> [a]
+quickSortRev [] = []
+quickSortRev (n:ns) = quickSortRev larger ++ [n] ++ quickSortRev smaller
+ where 
+  smaller = [m | m <- ns, m <= n]
+  larger = [m | m <- ns, m > n]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -138,7 +145,7 @@ type Skontieren = Bool
 type MinStueckzahl = Stueckzahl
 
 guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
-guenstigste_Lieferanten sa f a = vielleicht $ map (\(_,_,h) -> h) $ guenstigste sa f a False 0  
+guenstigste_Lieferanten sa f a = vielleicht $ quickSortRev $ map (\(_,_,h) -> h) $ guenstigste sa f a False 0  
  where
   vielleicht :: Haendlerliste -> Maybe Haendlerliste 
   vielleicht a = if a == [] then Nothing else Just a 

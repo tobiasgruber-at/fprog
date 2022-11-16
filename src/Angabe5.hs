@@ -64,18 +64,18 @@ class Wgf a where                -- Wgf fuer `wohlgeformt'
 
 instance Wgf Lieferausblick where 
  ist_wgf (LA l) = [a | a@(a_f,a_n) <- l, [b | b@(b_f,b_n) <- l, b_f == a_f && b_n /= a_n] /= []] == []
- wgf_fehler x = error "Ausblickfehler"
+ wgf_fehler _ = error "Ausblickfehler"
 
 instance Wgf Sortiment where
  ist_wgf (Sort l) = [a | a@(a_t,a_ds) <- l, (not (ds_s_wgf a_ds)) || length [b | b@(b_t,_) <- l, b_t == a_t] > 1] == []
- wgf_fehler x = error "Sortimentfehler"
+ wgf_fehler _ = error "Sortimentfehler"
 
 ds_s_wgf :: Datensatz -> Bool
 ds_s_wgf (DS { lieferbare_stueckzahl_im_Zeitfenster = la }) = ist_wgf la
-ds_s_wgf x = True 
+ds_s_wgf _ = True 
 
 instance Wgf Anbieter where
- ist_wgf (A l) = [a | a@(a_h,a_s) <- l, (not (ist_wgf a_s)) || length [b | b@(b_h,b_s) <- l, b_h == a_h] > 1] == []
+ ist_wgf (A l) = [a | a@(a_h,a_s) <- l, (not (ist_wgf a_s)) || length [b | b@(b_h,_) <- l, b_h == a_h] > 1] == []
  wgf_fehler _ = error "Anbieterfehler"
 
 {- Knapp, aber gut nachvollziehbar gehen die Instanzbildungen fuer Wgf folgendermassen vor:
@@ -89,24 +89,22 @@ type Haendlerliste = [Haendler]
 type Stueckpreis = Nat0
 
 sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
-sofort_lieferfaehig sa a = [x_h | x@(x_h,x_s) <- validierte_liste a, (fst $ sofort_lieferbar_st sa x_s) > 0]
+sofort_lieferfaehig sa a = [x_h | (x_h,x_s) <- anbieter_liste(validiere a), (fst $ sofort_lieferbar_st sa x_s) > 0]
 
 sofort_lieferbar_st :: Suchanfrage -> Sortiment -> (Stueckzahl, Stueckpreis)
-sofort_lieferbar_st sa (Sort s_l) = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) [sofort_lieferbar_ds x_ds | x@(x_t,x_ds) <- s_l, x_t == sa]
+sofort_lieferbar_st sa (Sort s_l) = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) [sofort_lieferbar_ds x_ds | (x_t,x_ds) <- s_l, x_t == sa]
 
 sofort_lieferbar_ds :: Datensatz -> (Stueckzahl, Stueckpreis)
 sofort_lieferbar_ds (DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p }) = (s, p)
 sofort_lieferbar_ds _ = (0, 0)
 
-validierte_liste :: Anbieter -> [(Haendler,Sortiment)]
-validierte_liste a = liste (validiere a)
- where
-  liste :: Anbieter -> [(Haendler,Sortiment)]
-  liste (A l) = l 
-  validiere :: (Wgf a) => a -> a
-  validiere w
-   | ist_wgf w == True = w
-   | otherwise = wgf_fehler w 
+anbieter_liste :: Anbieter -> [(Haendler,Sortiment)]
+anbieter_liste (A l) = l
+
+validiere :: (Wgf a) => a -> a
+validiere a
+ | ist_wgf a == True = a
+ | otherwise = wgf_fehler a 
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -119,7 +117,13 @@ type Stueckzahl  = Nat0
 type Gesamtpreis = Nat0
  
 sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
-sofort_erhaeltliche_Stueckzahl sa a = foldl (\(acc_s, acc_p) (x_s, x_p) -> (x_s + acc_s, (x_s * x_p) + acc_p)) (0, 0) [sofort_lieferbar_st sa x_s | (_,x_s) <- validierte_liste a]
+sofort_erhaeltliche_Stueckzahl sa a = foldl (\(acc_s, acc_p) (x_s, x_p) -> (x_s + acc_s, (x_s * x_p) + acc_p)) (0, 0) [sofort_lieferbar_st sa x_s | (_,x_s) <- anbieter_liste(validiere_anbieter a)]
+
+validiere_anbieter :: (Wgf a) => a -> a
+validiere_anbieter a
+ | ist_wgf a == True = a
+ | otherwise = error "Anbieterargumentfehler"
+
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
 -}

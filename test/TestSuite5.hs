@@ -6,11 +6,11 @@ import qualified Control.Exception as Exc
 
 import           Angabe5
 
-expectSomeError :: a -> Assertion
-expectSomeError val = do
+expectSomeError :: String -> a -> Assertion
+expectSomeError msg val = do
   res <- Exc.try (Exc.evaluate val)
   case res of
-    Left (Exc.ErrorCall _) -> pure ()
+    Left (Exc.ErrorCall m) -> if m == msg then pure () else assertFailure ("Expected error '" ++ msg ++ "' but got error '" ++ m ++ "'") 
     Right _ -> assertFailure "Expected error call but got none"
 
 spec :: TestTree
@@ -36,7 +36,7 @@ lieferausblickTests =
     , testCase "Lieferausblick ist nicht wohlgeformt 1" $
       ist_nwgf (LA [((LF Q1 2023), 0)]) @?= False
     , testCase "Lieferausblick wohlgeformt Fehler 1" $
-      expectSomeError (wgf_fehler (LA [((LF Q1 2023), 0)]))
+      expectSomeError "Ausblickfehler" (wgf_fehler (LA [((LF Q1 2023), 0)]))
     ]
 
 sortimentTests :: TestTree
@@ -57,7 +57,7 @@ sortimentTests =
       ist_nwgf (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]) @?=
       False
     , testCase "Sortiment wohlgeformt Fehler 1" $
-      expectSomeError(wgf_fehler (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
+      expectSomeError "Sortimentfehler" (wgf_fehler (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))
     ]
 
 anbieterTests :: TestTree
@@ -87,7 +87,7 @@ anbieterTests =
     , testCase "Anbieter ist nicht wohlgeformt 1" $
       ist_nwgf (A [(H1, (Sort []))]) @?= False
     , testCase "Anbieter wohlgeformt Fehler 1" $
-      expectSomeError(wgf_fehler (A [(H1, (Sort []))]))
+      expectSomeError "Anbieterfehler" (wgf_fehler (A [(H1, (Sort []))]))
     ]
     
 sofortLieferfaehigTests :: TestTree
@@ -107,7 +107,7 @@ sofortLieferfaehigTests =
       ])
       @?= [H1, H2]
     , testCase "Sofort lieferbar fehlerhaft 1" $
-      expectSomeError(sofort_lieferfaehig (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))]))
+      expectSomeError "Anbieterfehler" (sofort_lieferfaehig (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))]))
     ]
     
 sofortErhaeltlichTests :: TestTree
@@ -127,5 +127,5 @@ sofortErhaeltlichTests =
       ])
       @?= (4, 7)
     , testCase "Sofort erhältlich fehlerhaft 1" $
-      expectSomeError(sofort_erhaeltliche_Stueckzahl (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))]))
+      expectSomeError "Anbieterargumentfehler" (sofort_erhaeltliche_Stueckzahl (M M1) (A [(H1, (Sort [((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto)), ((M M1), (DS 1 1 (LA [((LF Q1 2023), 0)]) Kein_Skonto))]))]))
     ]

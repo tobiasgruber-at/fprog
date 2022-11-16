@@ -89,9 +89,7 @@ type Haendlerliste = [Haendler]
 type Stueckpreis = Nat0
 
 sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
-sofort_lieferfaehig sa a@(A a_l)
- | ist_wgf a = [x_h | x@(x_h,x_s) <- a_l, (fst $ sofort_lieferbar_st sa x_s) > 0]
- | otherwise = []
+sofort_lieferfaehig sa a = [x_h | x@(x_h,x_s) <- validierte_liste a, (fst $ sofort_lieferbar_st sa x_s) > 0]
 
 sofort_lieferbar_st :: Suchanfrage -> Sortiment -> (Stueckzahl, Stueckpreis)
 sofort_lieferbar_st sa (Sort s_l) = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) [sofort_lieferbar_ds x_ds | x@(x_t,x_ds) <- s_l, x_t == sa]
@@ -99,6 +97,16 @@ sofort_lieferbar_st sa (Sort s_l) = foldl (\x y -> (fst x + fst y, snd x + snd y
 sofort_lieferbar_ds :: Datensatz -> (Stueckzahl, Stueckpreis)
 sofort_lieferbar_ds (DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p }) = (s, p)
 sofort_lieferbar_ds _ = (0, 0)
+
+validierte_liste :: Anbieter -> [(Haendler,Sortiment)]
+validierte_liste a = liste (validiere a)
+ where
+  liste :: Anbieter -> [(Haendler,Sortiment)]
+  liste (A l) = l 
+  validiere :: (Wgf a) => a -> a
+  validiere w
+   | ist_wgf w == True = w
+   | otherwise = wgf_fehler w 
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -111,10 +119,7 @@ type Stueckzahl  = Nat0
 type Gesamtpreis = Nat0
  
 sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
-sofort_erhaeltliche_Stueckzahl sa a@(A a_l)
- | ist_wgf a = foldl (\(acc_s, acc_p) (x_s, x_p) -> (x_s + acc_s, (x_s * x_p) + acc_p)) (0, 0) [sofort_lieferbar_st sa x_s | (_,x_s) <- a_l]
- | otherwise = (0, 0)
-
+sofort_erhaeltliche_Stueckzahl sa a = foldl (\(acc_s, acc_p) (x_s, x_p) -> (x_s + acc_s, (x_s * x_p) + acc_p)) (0, 0) [sofort_lieferbar_st sa x_s | (_,x_s) <- validierte_liste a]
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
 -}

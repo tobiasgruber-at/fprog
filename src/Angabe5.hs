@@ -11,7 +11,14 @@ type Nat0    = Int     -- Natürliche Zahlen beginnend mit 0
 type Nat1    = Int     -- Natürliche Zahlen beginnend mit 1
 type Nat2023 = Int     -- Natürliche Zahlen beginnend mit 2023
 
-newtype EUR  = EUR { euro :: Nat1 }
+newtype EUR  = EUR { euro :: Nat1 } deriving (Show)
+
+instance Eq EUR where 
+ (EUR e1) == (EUR e2) = e1 == e2 
+ 
+instance Ord EUR where 
+ (EUR e1) < (EUR e2) = e1 < e2
+ (EUR e1) <= (EUR e2) = e1 <= e2 
 
 data Skonto  = Kein_Skonto
                | DreiProzent  
@@ -148,39 +155,49 @@ guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Hae
 guenstigste_Lieferanten sa f a = vielleicht $ quickSortRev $ map (\(_,_,h) -> h) $ guenstigste sa f a False 0  
  where
   vielleicht :: Haendlerliste -> Maybe Haendlerliste 
-  vielleicht a = if a == [] then Nothing else Just a 
+  vielleicht x = if x == [] then Nothing else Just x 
  
 guenstigste :: Suchanfrage -> Lieferfenster -> Anbieter -> Skontieren -> MinStueckzahl -> [HaendlerDaten]
 guenstigste sa f a skontieren min_stk = foldl finde_guenstigste [] produktinfo_a
  where
   finde_guenstigste :: [HaendlerDaten] -> HaendlerDaten -> [HaendlerDaten]
   finde_guenstigste [] y@(y_s, _, _) = if y_s > 0 then [y] else []
-  finde_guenstigste list@(x@(_, x_p, _):_) y@(y_s, y_p, _)
+  finde_guenstigste list@((_, x_p, _):_) y@(y_s, y_p, _)
    | y_s == 0 || (y_p > x_p) = list
    | (y_p == x_p) = list ++ [y]
    | True = [y]
+   
   produktinfo_a :: [HaendlerDaten]  
-  produktinfo_a = [transform h (produktinfo_st sa f st) | (h, st) <- anbieter_liste(validiere_anbieter a)]
+  produktinfo_a = [transform h (produktinfo_st st) | (h, st) <- anbieter_liste(validiere_anbieter a)]
+  
+  produktinfo_st :: Sortiment -> ProduktDaten
+  produktinfo_st (Sort st_l) = if l == [] then (0, 0, Kein_Skonto) else head l
+   where
+    l :: [ProduktDaten] 
+    l = filter (\(s, _, _) -> s >= min_stk) [produktinfo_ds x_ds | (x_t, x_ds) <- st_l, x_t == sa]
+     
+  produktinfo_ds :: Datensatz -> ProduktDaten
+  produktinfo_ds Nicht_im_Sortiment = (0, 0, Kein_Skonto)
+  produktinfo_ds (DS { preis_in_euro = p, lieferbare_stueckzahl_im_Zeitfenster = lst, skonto = sk }) = (stk, p, sk)
+   where stk = stk_ausblick lst
+     
+  stk_ausblick :: Lieferausblick -> Stueckzahl
+  stk_ausblick (LA la_l) = if l == [] then 0 else head l
+   where
+    l :: [Nat0] 
+    l = [x_p | (x_f, x_p) <- la_l, x_f == f]
 
-produktinfo_st :: Suchanfrage -> Lieferfenster -> Sortiment -> ProduktDaten
-produktinfo_st sa f (Sort st_l) = if l == [] then (0, 0, Kein_Skonto) else head l
- where
-  l :: [ProduktDaten] 
-  l = [produktinfo_ds f x_ds | x@(x_t, x_ds) <- st_l, x_t == sa] 
+  transform :: Haendler -> ProduktDaten -> HaendlerDaten
+  transform h (stk, p, sk) = (stk, (if skontieren then skontiert (p * min_stk) sk else p), h)
 
-produktinfo_ds :: Lieferfenster -> Datensatz -> ProduktDaten
-produktinfo_ds _ Nicht_im_Sortiment = (0, 0, Kein_Skonto)
-produktinfo_ds f (DS { preis_in_euro = p, lieferbare_stueckzahl_im_Zeitfenster = lst, skonto = sk }) = (stk, p, sk)
- where stk = ausblick_stk f lst  
-
-ausblick_stk :: Lieferfenster -> Lieferausblick -> Stueckzahl
-ausblick_stk f (LA la_l) = if l == [] then 0 else head l
- where
-  l :: [Nat0] 
-  l = [x_p | (x_f, x_p) <- la_l, x_f == f]
-
-transform :: Haendler -> ProduktDaten -> HaendlerDaten
-transform h (stk, p, sk) = (stk, p, h)
+  skontiert :: Stueckpreis -> Skonto -> Gesamtpreis
+  skontiert p DreiProzent = runden $ (fromIntegral p) * 0.97
+  skontiert p FuenfProzent = runden $ (fromIntegral p) * 0.95
+  skontiert p ZehnProzent = runden $ (fromIntegral p) * 0.9
+  skontiert p _ = p
+  
+  runden :: (Integral b) => Double -> b
+  runden x = 10 * (ceiling (x / 10))
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -191,8 +208,16 @@ transform h (stk, p, sk) = (stk, p, h)
 
 type RabattierterPreis = EUR
 
--- guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Anbieter -> [(Haendler,RabattierterPreis)]
--- guenstigste_Lieferanten_im_Lieferfenster = error "Noch nicht implementiert!"
+guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Anbieter -> [(Haendler,RabattierterPreis)]
+guenstigste_Lieferanten_im_Lieferfenster _ _ 0 _ = []  
+guenstigste_Lieferanten_im_Lieferfenster sa f min_stk a = quickSortRevTuple $ map (\(_, p, h) -> (h, (EUR p))) $ guenstigste sa f a True min_stk  
+
+quickSortRevTuple :: [(Haendler,RabattierterPreis)] -> [(Haendler,RabattierterPreis)]
+quickSortRevTuple [] = []
+quickSortRevTuple (n@(n_h,_):ns) = quickSortRevTuple larger ++ [n] ++ quickSortRevTuple smaller
+ where 
+  smaller = [m | m@(h,_) <- ns, h <= n_h]
+  larger = [m | m@(h,_) <- ns, h > n_h]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

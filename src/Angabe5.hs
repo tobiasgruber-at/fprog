@@ -86,7 +86,8 @@ instance Wgf Anbieter where
  wgf_fehler _ = error "Anbieterfehler"
 
 {- Knapp, aber gut nachvollziehbar gehen die Instanzbildungen fuer Wgf folgendermassen vor:
-   ...
+   Für jede Instanz wird über geschachtelte List Comprehensions geprüft, ob Einträge doppelt sind und entsprechenderweise
+   gehandlet. 
 -}
 
 
@@ -121,7 +122,9 @@ quickSortRev (n:ns) = quickSortRev larger ++ [n] ++ quickSortRev smaller
   larger = [m | m <- ns, m > n]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
-   ...
+   Über List Comprehensions werden alle lieferfaehigen Anbieter und deren Lieferstand des gefragten Produkts aufgelistet. Diese Liste
+   wird anschließend rückwärts sortiert. Jeder Anbieter wird zudem validiert, damit im Fehlerfall der entsprechende
+   wgf_fehler ausgegeben wird.
 -}
 
 
@@ -139,7 +142,9 @@ validiere_anbieter a
  | otherwise = error "Anbieterargumentfehler"
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
-   ...
+   Der Bestand für das gefragte Produkt wird ueber alle Anbieter aufsummiert. Hierfuer wird eine Liste mit Anbietern und deren
+   Lieferständen erstellt, welche anschließend iterativ aufsummiert wird. Im Fehlerfall wird eine spezifische Fehlernachricht
+   ausgegeben. 
 -}
 
 
@@ -200,7 +205,9 @@ guenstigste sa f a skontieren min_stk = foldl finde_guenstigste [] produktinfo_a
   runden x = 10 * (ceiling (x / 10))
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
-   ...
+   Eine Liste aller guenstigsten Anbieter wird gefunden, indem iterativ eine Liste mit derzeit guenstigsten Anbietern
+   mit jedem Anbieter verglichen und moeglicherweise ergaenzt / ersetzt wird. Diese Liste wird anschließend auf das
+   Rueckgabeformat gemappt und rueckwaerts sortiert, und abschließend auf einen Maybe type transformiert.
 -}
 
 
@@ -220,6 +227,8 @@ quickSortRevTuple (n@(n_h,_):ns) = quickSortRevTuple larger ++ [n] ++ quickSortR
   larger = [m | m@(h,_) <- ns, h > n_h]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
-   ...
+   Eine Liste aller guenstigsten Anbieter wird gefunden, im ersten Schritt alle Anbieter mit zu wenig Stueck ausgefiltert werden,
+   und daraufhin der Gesamtbetrag fuer die gewuenschte Stueckzahl, unter Beruecksichtigung moeglicher Skonten, evaluiert wird. 
+   Diese Liste wird anschließend auf das Rueckgabeformat gemappt und rueckwaerts sortiert.
 -}
 

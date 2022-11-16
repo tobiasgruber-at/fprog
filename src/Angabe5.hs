@@ -113,7 +113,7 @@ validiere a
 
 -- Aufgabe A.6
 
-type Stueckzahl  = Nat0
+type Stueckzahl = Nat0
 type Gesamtpreis = Nat0
  
 sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
@@ -132,8 +132,48 @@ validiere_anbieter a
 -- Aufgabe A.7
 
 type Preis = EUR
--- guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
--- guenstigste_Lieferanten = error "Noch nicht implementiert!"
+type ProduktDaten = (Stueckzahl, Stueckpreis, Skonto)
+type HaendlerDaten = (Stueckzahl, Stueckpreis, Haendler)
+type Skontieren = Bool
+type MinStueckzahl = Stueckzahl
+
+guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
+guenstigste_Lieferanten sa f a = vielleicht $ map (\(_,_,h) -> h) $ guenstigste sa f a False 0  
+ where
+  vielleicht :: Haendlerliste -> Maybe Haendlerliste 
+  vielleicht a = if a == [] then Nothing else Just a 
+ 
+guenstigste :: Suchanfrage -> Lieferfenster -> Anbieter -> Skontieren -> MinStueckzahl -> [HaendlerDaten]
+guenstigste sa f a skontieren min_stk = foldl finde_guenstigste [] produktinfo_a
+ where
+  finde_guenstigste :: [HaendlerDaten] -> HaendlerDaten -> [HaendlerDaten]
+  finde_guenstigste [] y@(y_s, _, _) = if y_s > 0 then [y] else []
+  finde_guenstigste list@(x@(_, x_p, _):_) y@(y_s, y_p, _)
+   | y_s == 0 || (y_p > x_p) = list
+   | (y_p == x_p) = list ++ [y]
+   | True = [y]
+  produktinfo_a :: [HaendlerDaten]  
+  produktinfo_a = [transform h (produktinfo_st sa f st) | (h, st) <- anbieter_liste(validiere_anbieter a)]
+
+produktinfo_st :: Suchanfrage -> Lieferfenster -> Sortiment -> ProduktDaten
+produktinfo_st sa f (Sort st_l) = if l == [] then (0, 0, Kein_Skonto) else head l
+ where
+  l :: [ProduktDaten] 
+  l = [produktinfo_ds f x_ds | x@(x_t, x_ds) <- st_l, x_t == sa] 
+
+produktinfo_ds :: Lieferfenster -> Datensatz -> ProduktDaten
+produktinfo_ds _ Nicht_im_Sortiment = (0, 0, Kein_Skonto)
+produktinfo_ds f (DS { preis_in_euro = p, lieferbare_stueckzahl_im_Zeitfenster = lst, skonto = sk }) = (stk, p, sk)
+ where stk = ausblick_stk f lst  
+
+ausblick_stk :: Lieferfenster -> Lieferausblick -> Stueckzahl
+ausblick_stk f (LA la_l) = if l == [] then 0 else head l
+ where
+  l :: [Nat0] 
+  l = [x_p | (x_f, x_p) <- la_l, x_f == f]
+
+transform :: Haendler -> ProduktDaten -> HaendlerDaten
+transform h (stk, p, sk) = (stk, p, h)
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

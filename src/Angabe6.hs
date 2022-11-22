@@ -15,23 +15,26 @@ newtype EUR  = EUR { euro :: Nat1 }
 data Skonto  = Kein_Skonto 
                | DreiProzent  
                | FuenfProzent 
-               | ZehnProzent
+               | ZehnProzent deriving (Eq,Show)
 
-data Waschmaschine    = M1 | M2 | M3 | M4 | M5
-data Waeschetrockner  = T1 | T2 | T3 | T4
-data Waescheschleuder = S1 | S2 | S3
+data Waschmaschine    = M1 | M2 | M3 | M4 | M5 deriving (Eq,Show,Enum)
+data Waeschetrockner  = T1 | T2 | T3 | T4 deriving (Eq,Show,Enum)
+data Waescheschleuder = S1 | S2 | S3 deriving (Eq,Show,Enum)
 
 data Typ = M Waschmaschine
            | T Waeschetrockner
-           | S Waescheschleuder
+           | S Waescheschleuder deriving (Eq,Show)
 
-data Quartal       = Q1 | Q2 | Q3 | Q4 deriving (Eq,Ord,Show)
-data Jahr          = J2023 | J2024 | J2025
+data Quartal       = Q1 | Q2 | Q3 | Q4 deriving (Eq,Ord,Show,Enum)
+data Jahr          = J2023 | J2024 | J2025 deriving (Show,Ord,Eq,Enum)
 data Lieferfenster = LF { quartal :: Quartal,
                           jahr    :: Jahr 
-                        }
+                        } deriving (Eq,Show)
 
 newtype Lieferausblick = LA (Lieferfenster -> Nat0)
+
+instance Eq Lieferausblick where
+  l1 == l2 = (wg_la l1) == (wg_la l2)
 
 data Datensatz 
    = DS { preis_in_euro :: Nat1,
@@ -39,11 +42,25 @@ data Datensatz
           lieferbare_stueckzahl_im_Zeitfenster :: Lieferausblick,
           skonto :: Skonto
         }
-     | Nicht_im_Sortiment
+     | Nicht_im_Sortiment deriving (Eq)
+
+instance Show Datensatz where
+  show DS { 
+    preis_in_euro = p, 
+    sofort_lieferbare_stueckzahl = s, 
+    lieferbare_stueckzahl_im_Zeitfenster = l, 
+    skonto = sk } = "{ preis: " ++ (show p) ++ ", sofort lieferb. stk: " ++ (show s) ++ ", skonto: " ++ (show sk) ++ "}"
+  show Nicht_im_Sortiment = "nicht im sortiment" 
 
 newtype Sortiment = Sort (Typ -> Datensatz)
 
-data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10
+instance Show Sortiment where
+ show s = show (wg_so s)
+
+instance Eq Sortiment where
+  (Sort s1) == (Sort s2) = [s1 x | x <- t_liste] == [s2 x | x <- t_liste]
+
+data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10 deriving (Eq,Ord,Show,Enum)
 
 newtype Anbieter = A (Haendler -> Sortiment)
 
@@ -61,12 +78,23 @@ class Wgf a where                -- Wgf fuer `wohlgeformt'
 
 -- Aufgabe A.1
 
+f_liste :: [Lieferfenster]
+f_liste = [(LF q j) | q <- [Q1 .. Q4], j <- [J2023 .. J2025]]
+
+t_liste :: [Typ]
+t_liste = [M w | w <- [M1 .. M5]] ++ [T t | t <- [T1 .. T4]] ++ [S s | s <- [S1 .. S3]] 
+
+h_liste :: [Haendler]
+h_liste = [H1 .. H10]
+
 wg_la :: Lieferausblick -> [(Lieferfenster,Nat0)]
+wg_la (LA l) = [(f, l f) | f <- f_liste] 
 
 wg_so :: Sortiment -> [(Typ,Datensatz)]
+wg_so (Sort s) = [(t, s t) | t <- t_liste]
 
-wg_ab :: Anbieter ->  [(Haendler,Sortiment)
-
+wg_ab :: Anbieter -> [(Haendler,Sortiment)]
+wg_ab (A a) = [(h, a h) | h <- h_liste]
 
 {- Knapp, aber gut nachvollziehbar gehen die Implementierungen folgendermassen vor:
    ...
@@ -75,14 +103,14 @@ wg_ab :: Anbieter ->  [(Haendler,Sortiment)
 
 -- Aufgabe A.2
 
-instance Wgf Lieferausblick where
- ist_wgf = error "Noch nicht implementiert!"
+--instance Wgf Lieferausblick where
+-- ist_wgf = error "Noch nicht implementiert!"
 
-instance Wgf Sortiment where
- ist_wgf = error "Noch nicht implementiert!"
+--instance Wgf Sortiment where
+-- ist_wgf = error "Noch nicht implementiert!"
 
-instance Wgf Anbieter where
-  ist_wgf = error "Noch nicht implementiert!"
+--instance Wgf Anbieter where
+--  ist_wgf = error "Noch nicht implementiert!"
 
 {- Knapp, aber gut nachvollziehbar gehen die Instanzbildungen fuer Wgf folgendermassen vor:
    ...
@@ -91,10 +119,10 @@ instance Wgf Anbieter where
 
 -- Aufgabe A.5
 
-type Haendlerliste = [Haendler]
+--type Haendlerliste = [Haendler]
 
-sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
-sofort_lieferfaehig _ _ = error "Noch nicht implementiert!"
+--sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
+--sofort_lieferfaehig _ _ = error "Noch nicht implementiert!"
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -103,11 +131,11 @@ sofort_lieferfaehig _ _ = error "Noch nicht implementiert!"
 
 -- Aufgabe A.6
 
-type Stueckzahl  = Nat0
-type Gesamtpreis = Nat0
+--type Stueckzahl  = Nat0
+--type Gesamtpreis = Nat0
  
-sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
-sofort_erhaeltliche_Stueckzahl _ _ = error "Noch nicht implementiert!"
+--sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
+--sofort_erhaeltliche_Stueckzahl _ _ = error "Noch nicht implementiert!"
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -116,9 +144,9 @@ sofort_erhaeltliche_Stueckzahl _ _ = error "Noch nicht implementiert!"
 
 -- Aufgabe A.7
 
-type Preis = EUR
-guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
-guenstigste_Lieferanten _ _ = error "Noch nicht implementiert!"
+--type Preis = EUR
+--guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
+--guenstigste_Lieferanten _ _ = error "Noch nicht implementiert!"
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...
@@ -127,10 +155,10 @@ guenstigste_Lieferanten _ _ = error "Noch nicht implementiert!"
 
 -- Aufgabe A.8
 
-type RabattierterPreis = EUR
+--type RabattierterPreis = EUR
 
-guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Anbieter -> [(Haendler,RabattierterPreis)]
-guenstigste_Lieferanten_im_Lieferfenster _ _ = error "Noch nicht implementiert!"
+--guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Anbieter -> [(Haendler,RabattierterPreis)]
+--guenstigste_Lieferanten_im_Lieferfenster _ _ = error "Noch nicht implementiert!"
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

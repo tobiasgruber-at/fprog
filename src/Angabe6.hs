@@ -165,9 +165,59 @@ sofort_erhaeltliche_Stueckzahl sa a = foldl (\(acc_s, acc_p) (x_s, x_p) -> (x_s 
 
 -- Aufgabe A.7
 
---type Preis = EUR
---guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
---guenstigste_Lieferanten _ _ = error "Noch nicht implementiert!"
+type Preis = EUR
+type ProduktDaten = (Stueckzahl, Stueckpreis, Skonto)
+type HaendlerDaten = (Stueckzahl, Stueckpreis, Haendler)
+type Skontieren = Bool
+type MinStueckzahl = Stueckzahl
+
+guenstigste_Lieferanten :: Suchanfrage -> Lieferfenster -> Anbieter -> Maybe Haendlerliste
+guenstigste_Lieferanten sa f a = vielleicht $ quickSortRev $ map (\(_,_,h) -> h) $ guenstigste sa f a False 0  
+ where
+  vielleicht :: Haendlerliste -> Maybe Haendlerliste 
+  vielleicht x = if x == [] then Nothing else Just x 
+ 
+guenstigste :: Suchanfrage -> Lieferfenster -> Anbieter -> Skontieren -> MinStueckzahl -> [HaendlerDaten]
+guenstigste sa f a skontieren min_stk = foldl finde_guenstigste [] produktinfo_a
+ where
+  finde_guenstigste :: [HaendlerDaten] -> HaendlerDaten -> [HaendlerDaten]
+  finde_guenstigste [] y@(y_s, _, _) = if y_s > 0 then [y] else []
+  finde_guenstigste list@((_, x_p, _):_) y@(y_s, y_p, _)
+   | y_s == 0 || (y_p > x_p) = list
+   | (y_p == x_p) = list ++ [y]
+   | True = [y]
+   
+  produktinfo_a :: [HaendlerDaten]  
+  produktinfo_a = [transform h (produktinfo_st st) | (h, st) <- wg_ab a]
+  
+  produktinfo_st :: Sortiment -> ProduktDaten
+  produktinfo_st s = if l == [] then (0, 0, Kein_Skonto) else head l
+   where
+    l :: [ProduktDaten] 
+    l = filter (\(s, _, _) -> s >= min_stk) [produktinfo_ds x_ds | (x_t, x_ds) <- wg_so s, x_t == sa]
+     
+  produktinfo_ds :: Datensatz -> ProduktDaten
+  produktinfo_ds Nicht_im_Sortiment = (0, 0, Kein_Skonto)
+  produktinfo_ds (DS { preis_in_euro = p, lieferbare_stueckzahl_im_Zeitfenster = lst, skonto = sk }) = (stk, p, sk)
+   where stk = stk_ausblick lst
+     
+  stk_ausblick :: Lieferausblick -> Stueckzahl
+  stk_ausblick la = if l == [] then 0 else head l
+   where
+    l :: [Nat0] 
+    l = [x_p | (x_f, x_p) <- wg_la la, x_f == f]
+
+  transform :: Haendler -> ProduktDaten -> HaendlerDaten
+  transform h (stk, p, sk) = (stk, (if skontieren then skontiert (p * min_stk) sk else p), h)
+
+  skontiert :: Stueckpreis -> Skonto -> Gesamtpreis
+  skontiert p DreiProzent = runden $ (fromIntegral p) * 0.97
+  skontiert p FuenfProzent = runden $ (fromIntegral p) * 0.95
+  skontiert p ZehnProzent = runden $ (fromIntegral p) * 0.9
+  skontiert p _ = p
+  
+  runden :: (Integral b) => Double -> b
+  runden x = 10 * (ceiling (x / 10))
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

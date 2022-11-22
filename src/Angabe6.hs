@@ -36,6 +36,9 @@ newtype Lieferausblick = LA (Lieferfenster -> Nat0)
 instance Eq Lieferausblick where
   l1 == l2 = (wg_la l1) == (wg_la l2)
 
+instance Show Lieferausblick where
+ show l = show (wg_la l)
+
 data Datensatz 
    = DS { preis_in_euro :: Nat1,
           sofort_lieferbare_stueckzahl :: Nat0,
@@ -50,8 +53,8 @@ instance Show Datensatz where
     sofort_lieferbare_stueckzahl = s, 
     lieferbare_stueckzahl_im_Zeitfenster = l, 
     skonto = sk } = "{ preis: " ++ (show p) ++ ", sofort lieferb. stk: " ++ (show s) ++ ", skonto: " ++ (show sk) ++ "}"
-  show Nicht_im_Sortiment = "nicht im sortiment" 
-
+  show Nicht_im_Sortiment = "nicht im sortiment"
+  
 newtype Sortiment = Sort (Typ -> Datensatz)
 
 instance Show Sortiment where
@@ -104,19 +107,15 @@ wg_ab (A a) = [(h, a h) | h <- h_liste]
 -- Aufgabe A.2
 
 instance Wgf Lieferausblick where
- ist_wgf l = [a | a@(a_f,a_n) <- wg_la l, [b | b@(b_f,b_n) <- wg_la l, b_f == a_f && b_n /= a_n] /= []] == []
+ ist_wgf _ = True
  wgf_fehler _ = error "Ausblickfehler"
 
 instance Wgf Sortiment where
- ist_wgf l = [a | a@(a_t,a_ds) <- wg_so l, (not (ds_s_wgf a_ds)) || length [b | b@(b_t,_) <- wg_so l, b_t == a_t] > 1] == []
+ ist_wgf _ = True
  wgf_fehler _ = error "Sortimentfehler"
 
-ds_s_wgf :: Datensatz -> Bool
-ds_s_wgf (DS { lieferbare_stueckzahl_im_Zeitfenster = la }) = ist_wgf la
-ds_s_wgf _ = True 
-
 instance Wgf Anbieter where
- ist_wgf l = [a | a@(a_h,a_s) <- wg_ab l, (not (ist_wgf a_s)) || length [b | b@(b_h,_) <- wg_ab l, b_h == a_h] > 1] == []
+ ist_wgf _ = True
  wgf_fehler _ = error "Anbieterfehler"
 
 {- Knapp, aber gut nachvollziehbar gehen die Instanzbildungen fuer Wgf folgendermassen vor:
@@ -127,9 +126,25 @@ instance Wgf Anbieter where
 -- Aufgabe A.5
 
 type Haendlerliste = [Haendler]
+type Stueckpreis = Nat0
+type Stueckzahl = Nat0
 
 sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
-sofort_lieferfaehig _ _ = error "Noch nicht implementiert!"
+sofort_lieferfaehig sa a = quickSortRev [x_h | (x_h,x_s) <- wg_ab a, (fst $ sofort_lieferbar_st sa x_s) > 0]
+
+sofort_lieferbar_st :: Suchanfrage -> Sortiment -> (Stueckzahl, Stueckpreis)
+sofort_lieferbar_st sa s = foldl (\x y -> (fst x + fst y, snd x + snd y)) (0, 0) [sofort_lieferbar_ds x_ds | (x_t,x_ds) <- wg_so s, x_t == sa]
+
+sofort_lieferbar_ds :: Datensatz -> (Stueckzahl, Stueckpreis)
+sofort_lieferbar_ds (DS { sofort_lieferbare_stueckzahl = s, preis_in_euro = p }) = (s, p)
+sofort_lieferbar_ds _ = (0, 0)
+
+quickSortRev :: (Ord a) => [a] -> [a]
+quickSortRev [] = []
+quickSortRev (n:ns) = quickSortRev larger ++ [n] ++ quickSortRev smaller
+ where 
+  smaller = [m | m <- ns, m <= n]
+  larger = [m | m <- ns, m > n]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

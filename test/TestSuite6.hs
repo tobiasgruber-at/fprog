@@ -30,16 +30,11 @@ la_fn_3 (LF _ _) = 200
 ds_fn_1 :: Typ -> Datensatz 
 ds_fn_1 _ = DS 1 1 (LA la_fn_1) Kein_Skonto
 ds_fn_2 _ = DS 1 1 (LA la_fn_2) Kein_Skonto
-ds_fn_3 _ = DS 1 1 (LA la_fn_3) Kein_Skonto
-ds_fn_4 _ = Nicht_im_Sortiment
 ds_fn_5 (M _) = DS 1 1 (LA la_fn_3) Kein_Skonto
 ds_fn_5 _ = Nicht_im_Sortiment
 
-ab_fn_1 :: Haendler -> Sortiment
 ab_fn_1 _ = (Sort ds_fn_1)
 ab_fn_2 h = if h > H5 then (Sort ds_fn_2) else (Sort ds_fn_1) 
-ab_fn_3 h = if h == H1 then (Sort ds_fn_3) else (Sort ds_fn_4) 
-ab_fn_4 h = if h == H1 then (Sort ds_fn_3) else (Sort ds_fn_4) 
 ab_fn_5 _ = Sort ds_fn_5 
 
 -- Tests
@@ -47,7 +42,8 @@ spec :: TestTree
 spec = testGroup "Angabe6" [
     wgTests,
     wgfTests,
-    sofortLieferfaehigTests
+    sofortLieferfaehigTests,
+    sofortErhaeltlichTests
   ]
  
 wgTests :: TestTree
@@ -122,12 +118,54 @@ sofortLieferfaehigTests =
   testGroup
     "SofortLieferfähig Tests"
     [ testCase "Sofort lieferbar 1" $
-      sofort_lieferfaehig (M M1) (A ab_fn_3)
+      sofort_lieferfaehig (M M1) (A (\x ->
+        if x == H1 then (Sort (\_ -> DS 1 1 (LA (\_ -> 200)) Kein_Skonto)) 
+        else (Sort (\_ -> Nicht_im_Sortiment))
+      ))
       @?= [H1]
     , testCase "Sofort lieferbar 2" $
-      sofort_lieferfaehig (S S1) (A ab_fn_5)
-      @?= []
+      sofort_lieferfaehig (S S1) (A (\x ->
+        if x <= H5 then (Sort (\_ -> DS 3 10 (LA (\_ -> 200)) Kein_Skonto)) 
+        else (Sort (\_ -> Nicht_im_Sortiment))
+      ))
+      @?= [H5, H4 .. H1]
     , testCase "Sofort lieferbar 3" $
       sofort_lieferfaehig (M M4) (A ab_fn_5)
       @?= [H10, H9 .. H1]
+    , testCase "Nicht lieferbar 1" $
+      sofort_lieferfaehig (S S1) (A (\x -> (Sort (\_ -> Nicht_im_Sortiment))))
+      @?= []
+    , testCase "Nicht lieferbar 2" $
+      sofort_lieferfaehig (S S1) (A (\x ->
+        if x <= H5 then (Sort (\_ -> DS 10 0 (LA (\_ -> 200)) Kein_Skonto)) 
+        else (Sort (\_ -> Nicht_im_Sortiment))
+      ))
+      @?= []
+    ]
+
+sofortErhaeltlichTests :: TestTree
+sofortErhaeltlichTests = 
+  testGroup
+    "sofortErhaeltlichTests Tests"
+    [ testCase "Sofort erhältlich 1" $
+      sofort_erhaeltliche_Stueckzahl (M M1) (A (\x ->
+        if elem x [H3 .. H6] then (Sort (\_ -> DS 3 10 (LA (\_ -> 200)) Kein_Skonto)) 
+        else (Sort (\_ -> Nicht_im_Sortiment))
+      ))
+      @?= (40, 120)
+    , testCase "Sofort erhältlich 2" $
+      sofort_erhaeltliche_Stueckzahl (M M1) (A (\x ->
+        if x <= H3 then (Sort (\_ -> DS 2 3 (LA (\_ -> 200)) Kein_Skonto)) 
+        else (Sort (\_ -> Nicht_im_Sortiment))
+      ))
+      @?= (9, 18)
+    , testCase "Nicht erhaeltlich 1" $
+      sofort_erhaeltliche_Stueckzahl (S S1) (A (\x -> (Sort (\_ -> Nicht_im_Sortiment))))
+      @?= (0, 0)
+    , testCase "Nicht erhaeltlich 1" $
+      sofort_erhaeltliche_Stueckzahl (S S1) (A (\x ->
+        if x <= H5 then (Sort (\_ -> DS 10 0 (LA (\_ -> 200)) Kein_Skonto)) 
+        else (Sort (\_ -> Nicht_im_Sortiment))
+      ))
+      @?= (0, 0)
     ]

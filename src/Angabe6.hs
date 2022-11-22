@@ -127,7 +127,6 @@ instance Wgf Anbieter where
 
 type Haendlerliste = [Haendler]
 type Stueckpreis = Nat0
-type Stueckzahl = Nat0
 
 sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
 sofort_lieferfaehig sa a = quickSortRev [x_h | (x_h,x_s) <- wg_ab a, (fst $ sofort_lieferbar_st sa x_s) > 0]
@@ -153,11 +152,11 @@ quickSortRev (n:ns) = quickSortRev larger ++ [n] ++ quickSortRev smaller
 
 -- Aufgabe A.6
 
---type Stueckzahl  = Nat0
---type Gesamtpreis = Nat0
+type Stueckzahl  = Nat0
+type Gesamtpreis = Nat0
  
---sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
---sofort_erhaeltliche_Stueckzahl _ _ = error "Noch nicht implementiert!"
+sofort_erhaeltliche_Stueckzahl :: Suchanfrage -> Anbieter -> (Stueckzahl,Gesamtpreis)
+sofort_erhaeltliche_Stueckzahl sa a = foldl (\(acc_s, acc_p) (x_s, x_p) -> (x_s + acc_s, (x_s * x_p) + acc_p)) (0, 0) [sofort_lieferbar_st sa x_s | (_,x_s) <- wg_ab a]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

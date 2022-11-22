@@ -103,14 +103,21 @@ wg_ab (A a) = [(h, a h) | h <- h_liste]
 
 -- Aufgabe A.2
 
---instance Wgf Lieferausblick where
--- ist_wgf = error "Noch nicht implementiert!"
+instance Wgf Lieferausblick where
+ ist_wgf l = [a | a@(a_f,a_n) <- wg_la l, [b | b@(b_f,b_n) <- wg_la l, b_f == a_f && b_n /= a_n] /= []] == []
+ wgf_fehler _ = error "Ausblickfehler"
 
---instance Wgf Sortiment where
--- ist_wgf = error "Noch nicht implementiert!"
+instance Wgf Sortiment where
+ ist_wgf l = [a | a@(a_t,a_ds) <- wg_so l, (not (ds_s_wgf a_ds)) || length [b | b@(b_t,_) <- wg_so l, b_t == a_t] > 1] == []
+ wgf_fehler _ = error "Sortimentfehler"
 
---instance Wgf Anbieter where
---  ist_wgf = error "Noch nicht implementiert!"
+ds_s_wgf :: Datensatz -> Bool
+ds_s_wgf (DS { lieferbare_stueckzahl_im_Zeitfenster = la }) = ist_wgf la
+ds_s_wgf _ = True 
+
+instance Wgf Anbieter where
+ ist_wgf l = [a | a@(a_h,a_s) <- wg_ab l, (not (ist_wgf a_s)) || length [b | b@(b_h,_) <- wg_ab l, b_h == a_h] > 1] == []
+ wgf_fehler _ = error "Anbieterfehler"
 
 {- Knapp, aber gut nachvollziehbar gehen die Instanzbildungen fuer Wgf folgendermassen vor:
    ...
@@ -119,10 +126,10 @@ wg_ab (A a) = [(h, a h) | h <- h_liste]
 
 -- Aufgabe A.5
 
---type Haendlerliste = [Haendler]
+type Haendlerliste = [Haendler]
 
---sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
---sofort_lieferfaehig _ _ = error "Noch nicht implementiert!"
+sofort_lieferfaehig :: Suchanfrage -> Anbieter -> Haendlerliste
+sofort_lieferfaehig _ _ = error "Noch nicht implementiert!"
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

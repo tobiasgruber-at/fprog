@@ -67,19 +67,45 @@ wgTests =
       same_items 
       (wg_la (LA la_fn_1)) 
        [ (LF {quartal = Q1, jahr = J2023}, 100), (LF {quartal = Q1, jahr = J2024}, 200), (LF {quartal = Q1, jahr = J2025}, 200),
-          (LF {quartal = Q2, jahr = J2023}, 100), (LF {quartal = Q2, jahr = J2024}, 200), (LF {quartal = Q2, jahr = J2025}, 200),
-          (LF {quartal = Q3, jahr = J2023}, 100), (LF {quartal = Q3, jahr = J2024}, 200), (LF {quartal = Q3, jahr = J2025}, 200),
-          (LF {quartal = Q4, jahr = J2023}, 100), (LF {quartal = Q4, jahr = J2024}, 200), (LF {quartal = Q4, jahr = J2025}, 200) 
+         (LF {quartal = Q2, jahr = J2023}, 100), (LF {quartal = Q2, jahr = J2024}, 200), (LF {quartal = Q2, jahr = J2025}, 200),
+         (LF {quartal = Q3, jahr = J2023}, 100), (LF {quartal = Q3, jahr = J2024}, 200), (LF {quartal = Q3, jahr = J2025}, 200),
+         (LF {quartal = Q4, jahr = J2023}, 100), (LF {quartal = Q4, jahr = J2024}, 200), (LF {quartal = Q4, jahr = J2025}, 200) 
         ]
       @?= True 
     , testCase "Lieferausblick Wertegraph 2" $
       same_items
       (wg_la (LA la_fn_2))
-      [ 
-        (LF {quartal = Q1, jahr = J2023}, 100), (LF {quartal = Q1, jahr = J2024}, 100), (LF {quartal = Q1, jahr = J2025}, 100),
+      [ (LF {quartal = Q1, jahr = J2023}, 100), (LF {quartal = Q1, jahr = J2024}, 100), (LF {quartal = Q1, jahr = J2025}, 100),
         (LF {quartal = Q2, jahr = J2023}, 100), (LF {quartal = Q2, jahr = J2024}, 100), (LF {quartal = Q2, jahr = J2025}, 100),
         (LF {quartal = Q3, jahr = J2023}, 200), (LF {quartal = Q3, jahr = J2024}, 200), (LF {quartal = Q3, jahr = J2025}, 200),
         (LF {quartal = Q4, jahr = J2023}, 200), (LF {quartal = Q4, jahr = J2024}, 200), (LF {quartal = Q4, jahr = J2025}, 200) 
+      ]
+      @?= True
+    , testCase "Lieferausblick Wertegraph 3" $
+      same_items
+      (wg_la (LA la_fn_3))
+      [ (LF {quartal = Q1, jahr = J2023}, 200), (LF {quartal = Q1, jahr = J2024}, 200), (LF {quartal = Q1, jahr = J2025}, 200),
+        (LF {quartal = Q2, jahr = J2023}, 200), (LF {quartal = Q2, jahr = J2024}, 200), (LF {quartal = Q2, jahr = J2025}, 200),
+        (LF {quartal = Q3, jahr = J2023}, 200), (LF {quartal = Q3, jahr = J2024}, 200), (LF {quartal = Q3, jahr = J2025}, 200),
+        (LF {quartal = Q4, jahr = J2023}, 200), (LF {quartal = Q4, jahr = J2024}, 200), (LF {quartal = Q4, jahr = J2025}, 200) 
+      ]
+      @?= True
+    , testCase "Lieferausblick Wertegraph 4" $
+      same_items
+      (wg_la (LA la_fn_4))
+      [ (LF {quartal = Q1, jahr = J2023}, 0), (LF {quartal = Q1, jahr = J2024}, 3), (LF {quartal = Q1, jahr = J2025}, 0),
+        (LF {quartal = Q2, jahr = J2023}, 0), (LF {quartal = Q2, jahr = J2024}, 3), (LF {quartal = Q2, jahr = J2025}, 0),
+        (LF {quartal = Q3, jahr = J2023}, 0), (LF {quartal = Q3, jahr = J2024}, 3), (LF {quartal = Q3, jahr = J2025}, 0),
+        (LF {quartal = Q4, jahr = J2023}, 0), (LF {quartal = Q4, jahr = J2024}, 3), (LF {quartal = Q4, jahr = J2025}, 0) 
+      ]
+      @?= True
+    , testCase "Lieferausblick Wertegraph 5" $
+      same_items
+      (wg_la (LA la_fn_5))
+      [ (LF {quartal = Q1, jahr = J2023}, 0), (LF {quartal = Q1, jahr = J2024}, 0), (LF {quartal = Q1, jahr = J2025}, 0),
+        (LF {quartal = Q2, jahr = J2023}, 3), (LF {quartal = Q2, jahr = J2024}, 3), (LF {quartal = Q2, jahr = J2025}, 3),
+        (LF {quartal = Q3, jahr = J2023}, 0), (LF {quartal = Q3, jahr = J2024}, 0), (LF {quartal = Q3, jahr = J2025}, 0),
+        (LF {quartal = Q4, jahr = J2023}, 0), (LF {quartal = Q4, jahr = J2024}, 0), (LF {quartal = Q4, jahr = J2025}, 0) 
       ]
       @?= True
     , testCase "Sortiment Wertegraph 1" $
@@ -96,6 +122,14 @@ wgTests =
       [ (S S1, ds_fn_2 (S S1)), (S S2, ds_fn_2 (S S2)), (S S3, ds_fn_2 (S S3)),
         (T T1, ds_fn_2 (T T1)), (T T2, ds_fn_2 (T T2)), (T T3, ds_fn_2 (T T3)), (T T4, ds_fn_2 (T T4)),
         (M M1, ds_fn_2 (M M1)), (M M2, ds_fn_2 (M M2)), (M M3, ds_fn_2 (M M3)), (M M4, ds_fn_2 (M M4)), (M M5, ds_fn_2 (M M5))
+      ]
+      @?= True
+    , testCase "Sortiment Wertegraph 2" $
+      same_items
+      (wg_so (Sort ds_fn_3))
+      [ (S S1, ds_fn_3 (S S1)), (S S2, ds_fn_3 (S S2)), (S S3, ds_fn_3 (S S3)),
+        (T T1, ds_fn_3 (T T1)), (T T2, ds_fn_3 (T T2)), (T T3, ds_fn_3 (T T3)), (T T4, ds_fn_3 (T T4)),
+        (M M1, ds_fn_3 (M M1)), (M M2, ds_fn_3 (M M2)), (M M3, ds_fn_3 (M M3)), (M M4, ds_fn_3 (M M4)), (M M5, ds_fn_3 (M M5))
       ]
       @?= True
     , testCase "Anbieter Wertegraph 1" $

@@ -24,20 +24,29 @@ contains (x:xs) y = if elem x y && contains xs y then True else error ("Item onl
 -- Test data
 la_fn_1 :: Lieferfenster -> Nat0
 la_fn_1 (LF _ j) = if (j >= J2024) then 200 else 100
+la_fn_2 :: Lieferfenster -> Nat0
 la_fn_2 (LF q _) = if (q >= Q3) then 200 else 100
+la_fn_3 :: Lieferfenster -> Nat0
 la_fn_3 (LF _ _) = 200
+la_fn_4 :: Lieferfenster -> Nat0
 la_fn_4 (LF _ J2024) = 3
 la_fn_4 (LF _ _) = 0
+la_fn_5 :: Lieferfenster -> Nat0
+la_fn_5 (LF Q2 _) = 3
+la_fn_5 (LF _ _) = 0
 
 ds_fn_1 :: Typ -> Datensatz 
 ds_fn_1 _ = DS 1 1 (LA la_fn_1) Kein_Skonto
+ds_fn_2 :: Typ -> Datensatz 
 ds_fn_2 _ = DS 1 1 (LA la_fn_2) Kein_Skonto
-ds_fn_5 (M _) = DS 1 1 (LA la_fn_3) Kein_Skonto
-ds_fn_5 _ = Nicht_im_Sortiment
+ds_fn_3 :: Typ -> Datensatz 
+ds_fn_3 (M _) = DS 1 1 (LA la_fn_3) Kein_Skonto
+ds_fn_3 _ = Nicht_im_Sortiment
 
 ab_fn_1 _ = (Sort ds_fn_1)
 ab_fn_2 h = if h > H5 then (Sort ds_fn_2) else (Sort ds_fn_1) 
-ab_fn_5 _ = Sort ds_fn_5 
+ab_fn_2 _ = (Sort ds_fn_1)
+ab_fn_2 _ = Sort ds_fn_3 
 
 -- Tests
 spec :: TestTree
@@ -46,7 +55,8 @@ spec = testGroup "Angabe6" [
     wgfTests,
     sofortLieferfaehigTests,
     sofortErhaeltlichTests,
-    guenstigsteLieferantenTests
+    guenstigsteLieferantenTests,
+    guenstigsteLieferantenImLFTests
   ]
  
 wgTests :: TestTree
@@ -122,26 +132,26 @@ sofortLieferfaehigTests =
     "SofortLieferfähig Tests"
     [ testCase "Sofort lieferbar 1" $
       sofort_lieferfaehig (M M1) (A (\x ->
-        if x == H1 then (Sort (\_ -> DS 1 1 (LA (\_ -> 200)) Kein_Skonto)) 
-        else (Sort (\_ -> Nicht_im_Sortiment))
+        if x == H1 then Sort (\_ -> DS 1 1 (LA (\_ -> 200)) Kein_Skonto) 
+        else Sort (\_ -> Nicht_im_Sortiment)
       ))
       @?= [H1]
     , testCase "Sofort lieferbar 2" $
       sofort_lieferfaehig (S S1) (A (\x ->
-        if x <= H5 then (Sort (\_ -> DS 3 10 (LA (\_ -> 200)) Kein_Skonto)) 
-        else (Sort (\_ -> Nicht_im_Sortiment))
+        if x <= H5 then Sort (\_ -> DS 3 10 (LA (\_ -> 200)) Kein_Skonto) 
+        else Sort (\_ -> Nicht_im_Sortiment)
       ))
       @?= [H5, H4 .. H1]
     , testCase "Sofort lieferbar 3" $
-      sofort_lieferfaehig (M M4) (A ab_fn_5)
+      sofort_lieferfaehig (M M4) (A ab_fn_2)
       @?= [H10, H9 .. H1]
     , testCase "Nicht lieferbar 1" $
       sofort_lieferfaehig (S S1) (A (\x -> (Sort (\_ -> Nicht_im_Sortiment))))
       @?= []
     , testCase "Nicht lieferbar 2" $
       sofort_lieferfaehig (S S1) (A (\x ->
-        if x <= H5 then (Sort (\_ -> DS 10 0 (LA (\_ -> 200)) Kein_Skonto)) 
-        else (Sort (\_ -> Nicht_im_Sortiment))
+        if x <= H5 then Sort (\_ -> DS 10 0 (LA (\_ -> 200)) Kein_Skonto) 
+        else Sort (\_ -> Nicht_im_Sortiment)
       ))
       @?= []
     ]
@@ -152,14 +162,14 @@ sofortErhaeltlichTests =
     "sofortErhaeltlichTests Tests"
     [ testCase "Sofort erhältlich 1" $
       sofort_erhaeltliche_Stueckzahl (M M1) (A (\x ->
-        if elem x [H3 .. H6] then (Sort (\_ -> DS 3 10 (LA (\_ -> 200)) Kein_Skonto)) 
-        else (Sort (\_ -> Nicht_im_Sortiment))
+        if elem x [H3 .. H6] then Sort (\_ -> DS 3 10 (LA (\_ -> 200)) Kein_Skonto) 
+        else Sort (\_ -> Nicht_im_Sortiment)
       ))
       @?= (40, 120)
     , testCase "Sofort erhältlich 2" $
       sofort_erhaeltliche_Stueckzahl (M M1) (A (\x ->
         if x <= H3 then (Sort (\_ -> DS 2 3 (LA (\_ -> 200)) Kein_Skonto)) 
-        else (Sort (\_ -> Nicht_im_Sortiment))
+        else Sort (\_ -> Nicht_im_Sortiment)
       ))
       @?= (9, 18)
     , testCase "Nicht erhaeltlich 1" $
@@ -167,8 +177,8 @@ sofortErhaeltlichTests =
       @?= (0, 0)
     , testCase "Nicht erhaeltlich 1" $
       sofort_erhaeltliche_Stueckzahl (S S1) (A (\x ->
-        if x <= H5 then (Sort (\_ -> DS 10 0 (LA (\_ -> 200)) Kein_Skonto)) 
-        else (Sort (\_ -> Nicht_im_Sortiment))
+        if x <= H5 then Sort (\_ -> DS 10 0 (LA (\_ -> 200)) Kein_Skonto) 
+        else Sort (\_ -> Nicht_im_Sortiment)
       ))
       @?= (0, 0)
     ]
@@ -179,29 +189,29 @@ guenstigsteLieferantenTests =
   "guenstigsteLieferantenTests Tests"
   [ testCase "Günstigste Lieferanten 1" $
     guenstigste_Lieferanten (M M1) (LF Q1 J2023) (A (\x ->
-      if x == H1 then (Sort (\_ -> DS 1 0 (LA (\_ -> 200)) Kein_Skonto)) 
+      if x == H1 then Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto) 
       else Sort (\_ -> Nicht_im_Sortiment)
     ))
     @?= Just [H1]
   , testCase "Günstigste Lieferanten 2" $
     guenstigste_Lieferanten (M M1) (LF Q1 J2023) (A (\x ->
-      if x <= H2 then (Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto)) 
-      else (Sort (\_ -> Nicht_im_Sortiment))
+      if x <= H2 then Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto) 
+      else Sort (\_ -> Nicht_im_Sortiment)
     ))
     @?= Just [H2, H1]
   , testCase "Günstigste Lieferanten 3" $
     guenstigste_Lieferanten (M M1) (LF Q1 J2023) (A (\x ->
-      if x == H2 then (Sort (\_ -> DS 1 1 (LA (\_ -> 2)) Kein_Skonto)) 
-      else (Sort (\_ -> DS 2 1 (LA (\_ -> 3)) Kein_Skonto))
+      if x == H2 then Sort (\_ -> DS 1 1 (LA (\_ -> 2)) Kein_Skonto) 
+      else Sort (\_ -> DS 2 1 (LA (\_ -> 3)) Kein_Skonto)
     ))
     @?= Just [H2]
   , testCase "Günstigste Lieferanten 4" $
     guenstigste_Lieferanten (M M1) (LF Q1 J2023) (A (\x ->
-      if x == H5 then (Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto)) 
-      else if x == H2 then (Sort (\_ -> DS 1 0 (LA (\_ -> 2)) Kein_Skonto)) 
-      else if x == H3 then (Sort (\_ -> DS 2 0 (LA (\_ -> 3)) Kein_Skonto)) 
-      else if x == H7 then (Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto)) 
-      else if x == H9 then (Sort (\_ -> DS 1 0 (LA la_fn_4) Kein_Skonto)) 
+      if x == H5 then Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto) 
+      else if x == H2 then Sort (\_ -> DS 1 0 (LA (\_ -> 2)) Kein_Skonto) 
+      else if x == H3 then Sort (\_ -> DS 2 0 (LA (\_ -> 3)) Kein_Skonto) 
+      else if x == H7 then Sort (\_ -> DS 1 0 (LA (\_ -> 3)) Kein_Skonto) 
+      else if x == H9 then Sort (\_ -> DS 1 0 (LA la_fn_4) Kein_Skonto) 
       else Sort (\_ -> Nicht_im_Sortiment)
     ))
     @?= Just [H7, H5, H2]
@@ -210,9 +220,73 @@ guenstigsteLieferantenTests =
     @?= Nothing
   , testCase "Keine Lieferanten 2" $
     guenstigste_Lieferanten (M M1) (LF Q1 J2023) (A (\x ->
-      if x <= H3 then (Sort (\_ -> DS 1 0 (LA (\_ -> 0)) Kein_Skonto)) 
-      else if elem x [H4 .. H7] then Sort (\_ -> DS 1 0 (LA la_fn_4) Kein_Skonto) 
+      if x <= H3 then Sort (\_ -> DS 1 0 (LA (\_ -> 0)) Kein_Skonto) 
+      else if x <= H7 then Sort (\_ -> DS 1 0 (LA la_fn_4) Kein_Skonto) 
       else Sort (\_ -> Nicht_im_Sortiment)
     ))
     @?= Nothing
+  ]
+  
+guenstigsteLieferantenImLFTests :: TestTree
+guenstigsteLieferantenImLFTests =
+  testGroup
+  "guenstigsteLieferantenImLFTests Tests"
+  [ testCase "Günstigste Lieferanten 1" $
+    guenstigste_Lieferanten_im_Lieferfenster (M M1) (LF Q1 J2023) 3 (A (\x ->
+      if x == H1 then Sort (\_ -> DS 200 0 (LA (\_ -> 3)) DreiProzent) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= [(H1, (EUR 590))]
+  , testCase "Günstigste Lieferanten 2" $
+    guenstigste_Lieferanten_im_Lieferfenster (M M1) (LF Q1 J2023) 3 (A (\x ->
+      if x <= H2 then Sort (\_ -> DS 200 0 (LA (\_ -> 3)) DreiProzent) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= [(H2, (EUR 590)), (H1, (EUR 590))]
+  , testCase "Günstigste Lieferanten 3" $
+    guenstigste_Lieferanten_im_Lieferfenster (M M1) (LF Q1 J2023) 2 (A (\x ->
+      if x == H2 then Sort (\_ -> DS 150 0 (LA (\_ -> 4)) ZehnProzent) 
+      else if x == H6 then Sort (\_ -> DS 100 0 (LA (\_ -> 1)) ZehnProzent) 
+      else if x == H1 then Sort (\_ -> DS 200 0 (LA (\_ -> 2)) DreiProzent) 
+      else if x == H4 then Sort (\_ -> DS 135 0 (LA (\_ -> 3)) Kein_Skonto) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= [(H4, (EUR 270)), (H2, (EUR 270))]
+  , testCase "Günstigste Lieferanten 4" $
+    guenstigste_Lieferanten_im_Lieferfenster (M M1) (LF Q1 J2023) 4 (A (\x ->
+      if x <= H2 then Sort (\_ -> DS 95 1 (LA (\_ -> 3)) DreiProzent) 
+      else if x <= H4 then Sort (\_ -> DS 100 5 (LA (\_ -> 5)) DreiProzent) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= [(H4, (EUR 390)), (H3, (EUR 390))]
+  , testCase "Günstigste Lieferanten 5" $
+    guenstigste_Lieferanten_im_Lieferfenster (M M1) (LF Q1 J2023) 2 (A (\x ->
+      if x <= H2 then Sort (\_ -> DS 95 1 (LA (\_ -> 3)) Kein_Skonto) 
+      else if x <= H4 then Sort (\_ -> DS 100 1 (LA (\_ -> 5)) DreiProzent) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= [(H2, EUR 190), (H1, EUR 190)]
+  , testCase "Günstigste Lieferanten 6" $
+    guenstigste_Lieferanten_im_Lieferfenster (M M1) (LF Q1 J2023) 2 (A (\x ->
+      if x == H2 then Sort (\_ -> DS 100 1 (LA (\_ -> 5)) Kein_Skonto)
+      else if x == H4 then Sort (\_ -> DS 100 1 (LA (\_ -> 5)) DreiProzent)
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= [(H4, EUR 200), (H2, EUR 200)]
+  , testCase "Keine Lieferanten 1" $
+    guenstigste_Lieferanten_im_Lieferfenster (T T2) (LF Q1 J2023) 2 (A (\x ->
+      if x == H1 then Sort (\_ -> DS 100 1 (LA la_fn_4) Kein_Skonto) 
+      else if x == H2 then Sort ds_fn_3 
+      else if x == H3 then Sort (\_ -> DS 100 1 (LA (\_ -> 0)) Kein_Skonto) 
+      else if x == H4 then Sort (\_ -> DS 100 1 (LA la_fn_5) Kein_Skonto) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= []
+  , testCase "Keine Lieferanten 1" $
+    guenstigste_Lieferanten_im_Lieferfenster (T T2) (LF Q1 J2023) 0 (A (\x ->
+      if x == H2 then Sort (\_ -> DS 95 1 (LA (\_ -> 3)) Kein_Skonto) 
+      else if x == H4 then Sort (\_ -> DS 100 1 (LA (\_ -> 5)) DreiProzent) 
+      else Sort (\_ -> Nicht_im_Sortiment)
+    ))
+    @?= []
   ]

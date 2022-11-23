@@ -10,7 +10,14 @@ module Angabe6 where
 type Nat0    = Int     -- Natürliche Zahlen beginnend mit 0
 type Nat1    = Int     -- Natürliche Zahlen beginnend mit 1
 
-newtype EUR  = EUR { euro :: Nat1 }
+newtype EUR  = EUR { euro :: Nat1 } deriving (Show)
+                                    
+instance Eq EUR where 
+ (EUR e1) == (EUR e2) = e1 == e2 
+ 
+instance Ord EUR where 
+ (EUR e1) < (EUR e2) = e1 < e2
+ (EUR e1) <= (EUR e2) = e1 <= e2 
 
 data Skonto  = Kein_Skonto 
                | DreiProzent  

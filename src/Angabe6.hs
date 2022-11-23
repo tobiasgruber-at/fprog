@@ -52,15 +52,7 @@ data Datensatz
           lieferbare_stueckzahl_im_Zeitfenster :: Lieferausblick,
           skonto :: Skonto
         }
-     | Nicht_im_Sortiment deriving (Eq)
-
-instance Show Datensatz where
-  show DS { 
-    preis_in_euro = p, 
-    sofort_lieferbare_stueckzahl = s, 
-    lieferbare_stueckzahl_im_Zeitfenster = l, 
-    skonto = sk } = "{ preis: " ++ (show p) ++ ", sofort lieferb. stk: " ++ (show s) ++ ", skonto: " ++ (show sk) ++ "}"
-  show Nicht_im_Sortiment = "nicht im sortiment"
+     | Nicht_im_Sortiment deriving (Eq,Show)
   
 newtype Sortiment = Sort (Typ -> Datensatz)
 
@@ -73,6 +65,9 @@ instance Eq Sortiment where
 data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10 deriving (Eq,Ord,Show,Enum)
 
 newtype Anbieter = A (Haendler -> Sortiment)
+
+instance Show Anbieter where
+ show a = show (wg_ab a)
 
 type Suchanfrage = Typ  
 

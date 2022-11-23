@@ -226,10 +226,18 @@ guenstigste sa f a skontieren min_stk = foldl finde_guenstigste [] produktinfo_a
 
 -- Aufgabe A.8
 
---type RabattierterPreis = EUR
+type RabattierterPreis = EUR
 
---guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Anbieter -> [(Haendler,RabattierterPreis)]
---guenstigste_Lieferanten_im_Lieferfenster _ _ = error "Noch nicht implementiert!"
+guenstigste_Lieferanten_im_Lieferfenster :: Suchanfrage -> Lieferfenster -> Stueckzahl -> Anbieter -> [(Haendler,RabattierterPreis)]
+guenstigste_Lieferanten_im_Lieferfenster _ _ 0 _ = []  
+guenstigste_Lieferanten_im_Lieferfenster sa f min_stk a = quickSortRevTuple $ map (\(_, p, h) -> (h, (EUR p))) $ guenstigste sa f a True min_stk  
+
+quickSortRevTuple :: [(Haendler,RabattierterPreis)] -> [(Haendler,RabattierterPreis)]
+quickSortRevTuple [] = []
+quickSortRevTuple (n@(n_h,_):ns) = quickSortRevTuple larger ++ [n] ++ quickSortRevTuple smaller
+ where 
+  smaller = [m | m@(h,_) <- ns, h <= n_h]
+  larger = [m | m@(h,_) <- ns, h > n_h]
 
 {- Knapp, aber gut nachvollziehbar geht die Implementierung folgendermassen vor:
    ...

@@ -137,13 +137,13 @@ lst2fkt_ab lst = convert (transform lst []) default_fn
 -- Aufgabe A.2
 
 lst2fkt_la' :: Lieferausblick' -> Lieferausblick
-lst2fkt_la' la = error "noch nicht implementiert"
+lst2fkt_la' (LA' l) = (LA $ lst2fkt_la l)
 
 lst2fkt_so' :: Sortiment' -> Sortiment
-lst2fkt_so' s = error "noch nicht implementiert"
+lst2fkt_so' (Sort' l) = (Sort $ lst2fkt_so l)
 
 lst2fkt_ab' :: Markt' -> Markt
-lst2fkt_ab' m = error "noch nicht implementiert"
+lst2fkt_ab' (Mt' l) = (Mt $ lst2fkt_ab l)
 
 {- Knapp, aber gut nachvollziehbar, gehen die Implementierungen
    Folgendermassen vor:

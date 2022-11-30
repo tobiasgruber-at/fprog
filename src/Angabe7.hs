@@ -2,21 +2,21 @@ module Angabe7 where
 
 
 {- 1. Vervollstaendigen Sie gemaess Angabentext!
-   2. Vervollständigen Sie auch die vorgegebenen Kommentaranfänge!
+   2. Vervollstaendigen Sie auch die vorgegebenen Kommentaranfaenge!
    3. Loeschen Sie keine Deklarationen aus diesem Rahmenprogramm, auch nicht die Modulanweisug!
    4. Achten Sie darauf, dass `Gruppe' Leserechte fuer Ihre Abgabedatei hat!
    5. Ersetzen Sie die Trivialimplementierungen error "Nicht implementiert" durch
-      sinnvolle Implementierungen, die die jeweilige Aufgabenstellung erfüllen.
+      sinnvolle Implementierungen, die die jeweilige Aufgabenstellung erfuellen.
    6. Kopieren Sie Ihre Implementierungen von Angabe 3 bzw. 6 an den
-      entsprechenden Stellen ein. Beachten Sie, dass dafür drei Umbennennungen
+      entsprechenden Stellen ein. Beachten Sie, dass dafuer drei Umbennennungen
       erforderlich sind, um Namenskonflikte zwischen Bezeichnungen von
       Angabe 3 und 6 zu vermeiden.
 -}
 
 
-type Nat0    = Int     -- Natürliche Zahlen beginnend mit 0
-type Nat1    = Int     -- Natürliche Zahlen beginnend mit 1
-type Nat2023 = Int     -- Natürliche Zahlen beginnend mit 2023
+type Nat0    = Int     -- Natuerliche Zahlen beginnend mit 0
+type Nat1    = Int     -- Natuerliche Zahlen beginnend mit 1
+type Nat2023 = Int     -- Natuerliche Zahlen beginnend mit 2023
 
 newtype EUR  = EUR { euro :: Nat1 }
 
@@ -173,7 +173,7 @@ preis (DS { preis_in_euro = p }) = p
 
 {- Knapp, aber gut nachvollziehbar, geht die Implementierung
    Folgendermassen vor:
-   Passt den Preis für alle Haendler pro Produktkategorie an den guenstigsten Haendler an. Hierfuer wird der Datensatz (und
+   Passt den Preis fuer alle Haendler pro Produktkategorie an den guenstigsten Haendler an. Hierfuer wird der Datensatz (und
    letztlich auch das Sortiment und der Markt) mittels change ueberschreiben, sodass der neue Preis zurueckgegeben wird. 
 -}
 

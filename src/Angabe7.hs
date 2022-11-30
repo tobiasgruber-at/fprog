@@ -25,9 +25,9 @@ data Skonto  = Kein_Skonto
                | FuenfProzent 
                | ZehnProzent deriving (Show)
 
-data Waschmaschine    = M1 | M2 | M3 | M4 | M5 deriving (Eq)
-data Waeschetrockner  = T1 | T2 | T3 | T4 deriving (Eq)
-data Waescheschleuder = S1 | S2 | S3 deriving (Eq)
+data Waschmaschine    = M1 | M2 | M3 | M4 | M5 deriving (Eq,Enum)
+data Waeschetrockner  = T1 | T2 | T3 | T4 deriving (Eq,Enum)
+data Waescheschleuder = S1 | S2 | S3 deriving (Eq,Enum)
 
 data Typ = M Waschmaschine
            | T Waeschetrockner
@@ -67,10 +67,13 @@ newtype Sortiment' = Sort' [(Typ,Datensatz')]
 instance Show Sortiment where
  show s = "Sortiment"
 
-data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10 deriving (Eq)
+data Haendler = H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 | H10 deriving (Eq,Enum)
 
 newtype Markt = Mt (Haendler -> Sortiment)
 newtype Markt' = Mt' [(Haendler,Sortiment')]
+
+instance Show Markt where
+ show m = "Markt"
 
 data Betroffen = Betroffen | NichtBetroffen deriving (Eq,Show)
 
@@ -133,7 +136,6 @@ lst2fkt_ab lst = convert (transform lst []) default_fn
    ...
 -}
 
-
 -- Aufgabe A.2
 
 lst2fkt_la' :: Lieferausblick' -> Lieferausblick
@@ -153,9 +155,53 @@ lst2fkt_ab' (Mt' l) = (Mt $ lst2fkt_ab l)
 
 -- Aufgabe A.4
 
-preisanpassung :: Markt -> Markt
-preisanpassung m = error "noch nicht implementiert"
+preis_m1 :: Markt -> Haendler -> Typ -> Nat0
+preis_m1 (Mt m) h t = preis_s1 (m h) t
 
+preis_s1 :: Sortiment -> Typ -> Nat1
+preis_s1 (Sort f) t = preis_ds1 (f t) 
+
+preis_ds1 :: Datensatz -> Nat1
+preis_ds1 Nicht_im_Sortiment = error "nicht angeboten"
+preis_ds1 (DS { preis_in_euro = p }) = p
+
+
+-- preis_m1 (preisanpassung (Mt (\x->(if x == H1 then (Sort (\y -> (DS 1 2 (LA (\z -> 3)) Kein_Skonto))) else (Sort (\y -> (DS 3 2 (LA (\z -> 3)) Kein_Skonto))))))) H4 (M M1)
+-- 1
+-- preis_m1 (preisanpassung (Mt (\x->(if x == H1 then (Sort (\y -> (DS 5 2 (LA (\z -> 3)) Kein_Skonto))) else (Sort (\y -> (DS 3 2 (LA (\z -> 3)) Kein_Skonto))))))) H1 (M M1)
+-- 3
+preisanpassung :: Markt -> Markt
+preisanpassung m = pa m $ [M w | w <- [M1 .. M5]] ++ [T t | t <- [T1 .. T4]] ++ [S s | s <- [S1 .. S3]]
+ where 
+    pa :: Markt -> [Typ] -> Markt 
+    pa m [] = m 
+    pa m (t:ts) = pa (if (guenstigster_pm m t) < 0 then m else (anpassung_t m t (guenstigster_pm m t) [H1 .. H10])) ts 
+
+-- anpassung_t (Mt (\x->(if x == H1 then (Sort (\y -> Nicht_im_Sortiment)) else (Sort (\y -> Nicht_im_Sortiment))))) (M M2) 4
+anpassung_t :: Markt -> Typ -> Nat0 -> [Haendler] -> Markt
+anpassung_t m _ _ [] = m
+anpassung_t (Mt m) t p (h:hs) = anpassung_t (Mt (change m h (anpassung_s (m h)))) t p hs
+ where
+  anpassung_s :: Sortiment -> Sortiment
+  anpassung_s (Sort s) = (Sort $ change s t (anpassung_ds (s t)))
+  anpassung_ds :: Datensatz -> Datensatz
+  anpassung_ds Nicht_im_Sortiment = Nicht_im_Sortiment
+  anpassung_ds (DS { sofort_lieferbare_stueckzahl=stk, lieferbare_stueckzahl_im_Zeitfenster=ls, skonto=sk }) = (DS p stk ls sk)
+   
+-- guenstigster_pm (Mt (\x->(if x == H1 then (Sort (\y -> (DS 1 2 (LA (\z -> 3)) Kein_Skonto))) else (Sort (\y -> (DS 2 2 (LA (\z -> 3)) Kein_Skonto)))))) (M M2)
+guenstigster_pm :: Markt -> Typ -> Nat1  
+guenstigster_pm (Mt f) t = if length l == 0 then -1 else foldr min (head l) l
+ where l = filter (\x -> x >= 0) [preis_s (f h) t | h <- [H1 .. H10]] 
+
+preis_s :: Sortiment -> Typ -> Nat1
+preis_s (Sort f) t = preis_ds (f t) 
+
+preis_ds :: Datensatz -> Nat1
+preis_ds Nicht_im_Sortiment = -1
+preis_ds (DS { preis_in_euro = p }) = p
+
+preis :: Datensatz -> Nat0
+preis (DS { preis_in_euro = p }) = p
 
 {- Knapp, aber gut nachvollziehbar, geht die Implementierung
    Folgendermassen vor:

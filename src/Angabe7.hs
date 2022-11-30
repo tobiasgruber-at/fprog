@@ -133,7 +133,8 @@ lst2fkt_ab lst = convert (transform lst []) default_fn
 
 {- Knapp, aber gut nachvollziehbar, gehen die Implementierungen
    Folgendermassen vor:
-   ...
+   Konvertieren die Listen in Funktionen, indem induktiv von einer Standardfunktion, welche nur einen Fehler zurueckgibt,
+   immer mehrere gueltige Abbildungen mittels der change Hilfsfunktion hinzugefuegt werden. 
 -}
 
 -- Aufgabe A.2
@@ -149,7 +150,7 @@ lst2fkt_ab' (Mt' l) = (Mt $ lst2fkt_ab l)
 
 {- Knapp, aber gut nachvollziehbar, gehen die Implementierungen
    Folgendermassen vor:
-   ...
+   Geben die entsprechend transformierten Funktionen aus A.1 zurueck, und wrappen diese in den entsprechenden Summentypen.
 -}
 
 
@@ -205,7 +206,8 @@ preis (DS { preis_in_euro = p }) = p
 
 {- Knapp, aber gut nachvollziehbar, geht die Implementierung
    Folgendermassen vor:
-   ...
+   Passt den Preis für alle Haendler pro Produktkategorie an den guenstigsten Haendler an. Hierfuer wird der Datensatz (und
+   letztlich auch das Sortiment und der Markt) mittels change ueberschreiben, sodass der neue Preis zurueckgegeben wird. 
 -}
 
 

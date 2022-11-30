@@ -84,15 +84,6 @@ type AbLieferfenster = Lieferfenster
 
 -- Aufgabe A.1
 
-instance Show (Haendler -> Sortiment) where
- show s = "Haendler -> Sortiment"
- 
-instance Show (Typ -> Datensatz) where
- show s = "Typ -> Datensatz"
-
-instance Show (Lieferfenster -> Nat0) where
- show s = "Lieferfenster -> Nat0"
-
 change :: Eq a => (a -> b) -> a -> b -> (a -> b)
 change f x y = g where g = \z -> if z == x then y else f z
 
@@ -102,15 +93,9 @@ convert ((lf, n):xs) f = convert xs (change f lf n)
 
 default_fn = \_ -> error "undefiniert"
 
--- lst2fkt_la [((LF Q1 2023), 2)] $ (LF Q1 2023)
--- > 2
--- lst2fkt_la [((LF Q1 2023), 2)] $ (LF Q1 2024)
--- > error
 lst2fkt_la :: [(Lieferfenster,Nat0)] -> (Lieferfenster -> Nat0)
 lst2fkt_la lst = convert lst default_fn 
 
--- lst2fkt_so [(M M1, DS' 1 1 (LA' [((LF Q1 2023), 2)]) Kein_Skonto)] (M M1)
--- > DS {preis_in_euro = 1, sofort_lieferbare_stueckzahl = 1, lieferbare_stueckzahl_im_Zeitfenster = Lieferausblick, skonto = Kein_Skonto}
 lst2fkt_so :: [(Typ,Datensatz')] -> (Typ -> Datensatz)
 lst2fkt_so lst = convert (transform lst []) default_fn 
  where
@@ -121,7 +106,6 @@ lst2fkt_so lst = convert (transform lst []) default_fn
   transform_ds :: Datensatz' -> Datensatz 
   transform_ds (DS' { preis_in_euro'=p, sofort_lieferbare_stueckzahl'=stk, lieferbare_stueckzahl_im_Zeitfenster'=(LA' la), skonto'=sk }) = DS p stk (LA $ lst2fkt_la la) sk
 
---  lst2fkt_ab [(H1, (Sort' [(M M1, DS' 1 1 (LA' [((LF Q1 2023), 2)]) Kein_Skonto)]))] $ H1
 lst2fkt_ab :: [(Haendler,Sortiment')] -> (Haendler -> Sortiment)
 lst2fkt_ab lst = convert (transform lst []) default_fn 
  where
@@ -156,21 +140,6 @@ lst2fkt_ab' (Mt' l) = (Mt $ lst2fkt_ab l)
 
 -- Aufgabe A.4
 
-preis_m1 :: Markt -> Haendler -> Typ -> Nat0
-preis_m1 (Mt m) h t = preis_s1 (m h) t
-
-preis_s1 :: Sortiment -> Typ -> Nat1
-preis_s1 (Sort f) t = preis_ds1 (f t) 
-
-preis_ds1 :: Datensatz -> Nat1
-preis_ds1 Nicht_im_Sortiment = error "nicht angeboten"
-preis_ds1 (DS { preis_in_euro = p }) = p
-
-
--- preis_m1 (preisanpassung (Mt (\x->(if x == H1 then (Sort (\y -> (DS 1 2 (LA (\z -> 3)) Kein_Skonto))) else (Sort (\y -> (DS 3 2 (LA (\z -> 3)) Kein_Skonto))))))) H4 (M M1)
--- 1
--- preis_m1 (preisanpassung (Mt (\x->(if x == H1 then (Sort (\y -> (DS 5 2 (LA (\z -> 3)) Kein_Skonto))) else (Sort (\y -> (DS 3 2 (LA (\z -> 3)) Kein_Skonto))))))) H1 (M M1)
--- 3
 preisanpassung :: Markt -> Markt
 preisanpassung m = pa m $ [M w | w <- [M1 .. M5]] ++ [T t | t <- [T1 .. T4]] ++ [S s | s <- [S1 .. S3]]
  where 
@@ -178,7 +147,6 @@ preisanpassung m = pa m $ [M w | w <- [M1 .. M5]] ++ [T t | t <- [T1 .. T4]] ++ 
     pa m [] = m 
     pa m (t:ts) = pa (if (guenstigster_pm m t) < 0 then m else (anpassung_t m t (guenstigster_pm m t) [H1 .. H10])) ts 
 
--- anpassung_t (Mt (\x->(if x == H1 then (Sort (\y -> Nicht_im_Sortiment)) else (Sort (\y -> Nicht_im_Sortiment))))) (M M2) 4
 anpassung_t :: Markt -> Typ -> Nat0 -> [Haendler] -> Markt
 anpassung_t m _ _ [] = m
 anpassung_t (Mt m) t p (h:hs) = anpassung_t (Mt (change m h (anpassung_s (m h)))) t p hs
@@ -189,7 +157,6 @@ anpassung_t (Mt m) t p (h:hs) = anpassung_t (Mt (change m h (anpassung_s (m h)))
   anpassung_ds Nicht_im_Sortiment = Nicht_im_Sortiment
   anpassung_ds (DS { sofort_lieferbare_stueckzahl=stk, lieferbare_stueckzahl_im_Zeitfenster=ls, skonto=sk }) = (DS p stk ls sk)
    
--- guenstigster_pm (Mt (\x->(if x == H1 then (Sort (\y -> (DS 1 2 (LA (\z -> 3)) Kein_Skonto))) else (Sort (\y -> (DS 2 2 (LA (\z -> 3)) Kein_Skonto)))))) (M M2)
 guenstigster_pm :: Markt -> Typ -> Nat1  
 guenstigster_pm (Mt f) t = if length l == 0 then -1 else foldr min (head l) l
  where l = filter (\x -> x >= 0) [preis_s (f h) t | h <- [H1 .. H10]] 
